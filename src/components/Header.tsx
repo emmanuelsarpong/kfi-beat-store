@@ -2,24 +2,70 @@ import { ExternalLink } from "lucide-react";
 import kfiLogo from "@/assets/logo.png";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Header = () => {
   const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (location.pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      navigate("/");
+    }
+  };
+
+  const handleContactClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (location.pathname === "/") {
+      // Already on home, just scroll
+      const section = document.getElementById("contact");
+      if (section) {
+        section.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      // Navigate home, then scroll after navigation
+      navigate("/", { replace: false });
+      setTimeout(() => {
+        const section = document.getElementById("contact");
+        if (section) {
+          section.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100); // Delay to ensure DOM updates
+    }
+  };
 
   return (
     <header className="border-b border-gray-800 bg-black/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-2 max-w-7xl">
         <div className="flex items-center justify-between">
-          <img src={kfiLogo} alt="KFI Logo" className="h-10 object-contain" />
+          <div className="flex items-center gap-2">
+            <a
+              href="/"
+              onClick={handleLogoClick}
+              className="flex items-center gap-2"
+              style={{ cursor: "pointer" }}
+            >
+              <img
+                src={kfiLogo}
+                alt="KFI Logo"
+                className="h-10 object-contain"
+              />
+            </a>
+          </div>
           <nav className="hidden md:flex items-center space-x-8">
             <a
-              href="#beats"
+              href="/store"
               className="text-gray-300 hover:text-white transition-colors font-medium"
             >
-              Beats
+              Store
             </a>
             <a
-              href="#contact"
+              href="/#contact"
+              onClick={handleContactClick}
               className="text-gray-300 hover:text-white transition-colors font-medium"
             >
               Contact
@@ -65,16 +111,19 @@ const Header = () => {
             {/* Menu links */}
             <nav className="flex flex-col items-center space-y-8">
               <a
-                href="#beats"
+                href="/store"
                 className="text-3xl font-bold text-white"
                 onClick={() => setOpen(false)}
               >
                 Beats
               </a>
               <a
-                href="#contact"
+                href="/#contact"
                 className="text-3xl font-bold text-white"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false);
+                  handleContactClick(new MouseEvent("click"));
+                }}
               >
                 Contact
               </a>

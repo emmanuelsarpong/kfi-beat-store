@@ -2,6 +2,7 @@ import React from "react";
 import clsx from "clsx";
 import { Button } from "@/components/ui/button";
 import studioVideo from "@/assets/studio.mp4";
+import { useNavigate } from "react-router-dom";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   size?: "sm" | "md" | "lg";
@@ -40,8 +41,10 @@ export const CustomButton: React.FC<ButtonProps> = ({
 };
 
 const HeroSection = () => {
-  const scrollToBeats = () => {
-    document.getElementById("beats")?.scrollIntoView({ behavior: "smooth" });
+  const navigate = useNavigate();
+
+  const goToStore = () => {
+    navigate("/store");
   };
 
   return (
@@ -59,14 +62,17 @@ const HeroSection = () => {
       {/* Gradient overlay at bottom */}
       <div className="pointer-events-none absolute bottom-0 w-full h-24 bg-gradient-to-b from-transparent to-black z-20" />
       <div className="relative z-30 flex flex-col items-center w-full">
-        <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-4" style={{ textAlign: "center" }}>
+        <h1
+          className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-4"
+          style={{ textAlign: "center" }}
+        >
           Premium beats for the modern sound
         </h1>
         <div className="flex-1" />
         <Button
           size="lg"
           className="mt-8 px-8 py-3 bg-white/90 text-black font-semibold rounded shadow hover:bg-white transition-all duration-200 ease-in-out hover:scale-105"
-          onClick={scrollToBeats}
+          onClick={goToStore}
         >
           Explore Beats
         </Button>
