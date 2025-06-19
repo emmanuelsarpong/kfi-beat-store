@@ -13,13 +13,14 @@ interface Beat {
   price: number;
   audioUrl: string;
   coverImage?: string;
+  paymentLink?: string;
 }
 
 interface BeatCardProps {
   beat: Beat;
 }
 
-const BeatCard = ({ beat }: BeatCardProps) => {
+const BeatCard = ({ beat, ...props }: BeatCardProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -35,11 +36,18 @@ const BeatCard = ({ beat }: BeatCardProps) => {
   };
 
   const handlePurchase = () => {
-    console.log(`Purchasing beat: ${beat.title} for $${beat.price}`);
-    alert(
-      `Purchase functionality for "${beat.title}" will be implemented with Stripe Elements`
-    );
+    if (beat.paymentLink) {
+      window.open(beat.paymentLink, "_blank");
+    } else {
+      alert("Purchase link not available yet.");
+    }
   };
+
+  // Stripe payment link for "Midnight Drive"
+  const paymentLink =
+    beat.title === "Midnight Drive"
+      ? "https://buy.stripe.com/test_28E14g7W4gyR5BudbQ6AM00"
+      : beat.paymentLink;
 
   return (
     <Card className="group bg-gray-900/50 border border-gray-800 hover:border-gray-700 transition-transform duration-200 ease-out hover:-translate-y-1 rounded-md">
@@ -88,9 +96,16 @@ const BeatCard = ({ beat }: BeatCardProps) => {
 
           <div className="flex items-center justify-between">
             <span className="text-2xl font-bold text-white">${beat.price}</span>
-            <Button onClick={handlePurchase}>
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Buy Now
+            {/* Stripe Buy Button for "Midnight Drive" */}
+            <Button asChild>
+              <a
+                href={paymentLink || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Buy Now
+              </a>
             </Button>
           </div>
         </div>

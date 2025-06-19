@@ -4,6 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Mail, Send } from "lucide-react";
+import axios from "axios";
+
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/xyzjpvyw";
 
 const ContactForm = () => {
   const [formData, setFormData] = useState({
@@ -11,10 +14,28 @@ const ContactForm = () => {
     email: "",
     message: "",
   });
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
+    setStatus("loading");
+    try {
+      const data = new FormData();
+      data.append("name", formData.name);
+      data.append("email", formData.email);
+      data.append("message", formData.message);
+
+      await axios.post(FORMSPREE_ENDPOINT, data, {
+        headers: { Accept: "application/json" },
+      });
+
+      setStatus("success");
+      setFormData({ name: "", email: "", message: "" });
+    } catch (err) {
+      setStatus("error");
+    }
   };
 
   const handleChange = (

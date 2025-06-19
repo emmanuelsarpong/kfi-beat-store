@@ -84,7 +84,7 @@ const beats: Beat[] = [
 const BeatsGrid = () => {
   return (
     <section id="beats" className="py-16 px-4">
-      <div className="container mx-auto max-w-7xl">
+      <div className="container mx-auto max-w-7xl p-0 md:px-4">
         <h3 className="text-3xl font-bold text-center mb-12">
           Latest{" "}
           <span className="bg-gradient-to-r from-zinc-300 via-zinc-400 to-zinc-200 bg-clip-text text-transparent font-semibold">
