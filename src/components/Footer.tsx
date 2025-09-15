@@ -28,7 +28,8 @@ const Footer = () => {
                 </span>
               </div>
               <p className="text-xs leading-relaxed max-w-[240px] text-zinc-400/80">
-                Premium, future-forward sound beds crafted for artists & creators seeking atmospheric impact and replay value.
+                Premium, future-forward sound beds crafted for artists &
+                creators seeking atmospheric impact and replay value.
               </p>
               <div className="flex items-center gap-3 text-[11px] font-medium tracking-wide">
                 <a
@@ -84,8 +85,12 @@ const Footer = () => {
                 </div>
               </div>
               <div className="flex gap-4 md:gap-6 text-[11px] text-zinc-500/70">
-                <span className="hover:text-zinc-300 transition-colors">v1.0.0</span>
-                <span className="hover:text-zinc-300 transition-colors">Status: Live</span>
+                <span className="hover:text-zinc-300 transition-colors">
+                  v1.0.0
+                </span>
+                <span className="hover:text-zinc-300 transition-colors">
+                  Status: Live
+                </span>
               </div>
             </div>
           </div>
@@ -100,9 +105,15 @@ const Footer = () => {
               <span className="text-zinc-500">All rights reserved.</span>
             </div>
             <div className="flex items-center gap-4">
-              <a href="/changelog" className="footer-link subtle">Changelog</a>
-              <a href="/roadmap" className="footer-link subtle">Roadmap</a>
-              <a href="/support" className="footer-link subtle">Support</a>
+              <a href="/changelog" className="footer-link subtle">
+                Changelog
+              </a>
+              <a href="/roadmap" className="footer-link subtle">
+                Roadmap
+              </a>
+              <a href="/support" className="footer-link subtle">
+                Support
+              </a>
             </div>
           </div>
         </div>

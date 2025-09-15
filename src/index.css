@@ -661,16 +661,16 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  color: rgba(228,228,231,0.7);
+  color: rgba(228, 228, 231, 0.7);
   text-decoration: none;
   transition: color 260ms ease, text-shadow 260ms ease;
 }
 .footer-link.subtle {
   font-weight: 500;
-  letter-spacing: .02em;
+  letter-spacing: 0.02em;
   font-size: 0.7rem;
   text-transform: uppercase;
-  color: rgba(160,160,170,0.55);
+  color: rgba(160, 160, 170, 0.55);
 }
 .footer-link::after {
   content: "";
@@ -679,24 +679,31 @@
   bottom: -2px;
   height: 1px;
   width: 0%;
-  background: linear-gradient(90deg,rgba(236,72,153,0.65),rgba(59,130,246,0.65));
-  opacity: .6;
+  background: linear-gradient(
+    90deg,
+    rgba(236, 72, 153, 0.65),
+    rgba(59, 130, 246, 0.65)
+  );
+  opacity: 0.6;
   transition: width 320ms ease;
 }
 .footer-link:hover {
   color: #fff;
-  text-shadow: 0 0 14px rgba(236,72,153,0.35),0 0 24px rgba(59,130,246,0.28);
+  text-shadow: 0 0 14px rgba(236, 72, 153, 0.35),
+    0 0 24px rgba(59, 130, 246, 0.28);
 }
-.footer-link:hover::after { width: 100%; }
+.footer-link:hover::after {
+  width: 100%;
+}
 
 .footer-label {
   font-size: 0.65rem;
   font-weight: 600;
-  letter-spacing: .1em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(200,200,210,0.55);
+  color: rgba(200, 200, 210, 0.55);
   position: relative;
-  padding-left: .75rem;
+  padding-left: 0.75rem;
 }
 .footer-label::before {
   content: "";
@@ -707,15 +714,28 @@
   height: 4px;
   transform: translateY(-50%);
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%,#ec4899,#6366f1 70%);
-  box-shadow: 0 0 8px rgba(236,72,153,0.6);
+  background: radial-gradient(circle at 30% 30%, #ec4899, #6366f1 70%);
+  box-shadow: 0 0 8px rgba(236, 72, 153, 0.6);
 }
 
 /* Idle waveform animation (MiniPlayer placeholder) */
 @keyframes footer-waveform {
-  0%,100% { transform: scaleY(0.55); opacity: .5; }
-  50% { transform: scaleY(1); opacity: 1; }
+  0%,
+  100% {
+    transform: scaleY(0.55);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
 }
-.animate-waveform { animation: footer-waveform 1.2s ease-in-out infinite; transform-origin: center bottom; }
-@media (prefers-reduced-motion: reduce) { .animate-waveform { animation: none; } }
-
+.animate-waveform {
+  animation: footer-waveform 1.2s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-waveform {
+    animation: none;
+  }
+}
