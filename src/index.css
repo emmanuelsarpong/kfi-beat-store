@@ -85,11 +85,106 @@
   transition-duration: 150ms;
 }
 
+/* Modern UI helpers */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+.btn-ripple::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 255, 255, 0.25),
+    transparent
+  );
+  transform: scale(0);
+  opacity: 0;
+  transition: transform 500ms ease, opacity 500ms ease;
+}
+.btn-ripple:active::after {
+  transform: scale(2.2);
+  opacity: 1;
+}
+
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-size: 0% 1px;
+  background-position: 0 100%;
+}
+.link-underline:hover {
+  background-size: 100% 1px;
+}
+
+/* Reveal on scroll */
+.reveal {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 500ms ease, transform 500ms ease;
+}
+
+/* Soft glow accents */
+.glow {
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+.glow:hover {
+  box-shadow: 0 0 24px 2px rgba(168, 142, 255, 0.22);
+}
+
+/* Mini player waveform bars */
+.kfi-mini-wave {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 10px;
+}
+.kfi-mini-wave span {
+  width: 2px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
+  animation: kfi-wave 1s ease-in-out infinite;
+}
+.kfi-mini-wave span:nth-child(2) {
+  height: 60%;
+  animation-delay: 0.1s;
+}
+.kfi-mini-wave span:nth-child(1) {
+  height: 40%;
+  animation-delay: 0.2s;
+}
+.kfi-mini-wave span:nth-child(3) {
+  height: 80%;
+  animation-delay: 0.15s;
+}
+.kfi-mini-wave span:nth-child(4) {
+  height: 50%;
+  animation-delay: 0.05s;
+}
+.kfi-mini-wave span:nth-child(5) {
+  height: 70%;
+  animation-delay: 0.25s;
+}
+@keyframes kfi-wave {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.35);
+  }
+}
+
 /* Hero subtle EQ bars */
 .kfi-eq-bar {
-  width: 4px;
+  width: 5px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.7);
   animation: kfi-pulse 1.2s ease-in-out infinite;
 }
 
@@ -174,4 +269,388 @@
   50% {
     transform: scaleY(1.3);
   }
+}
+
+/* Route fade */
+.animate-fade-in {
+  animation: fade-in 260ms ease-out;
+}
+
+/* CTA subtle pulse for glow and waves (synced) */
+@keyframes cta-pulse-scale {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.animate-cta-pulse {
+  animation: cta-pulse-scale 3.2s ease-in-out infinite;
+}
+
+/* Prefer-reduced-motion: disable pulse animations */
+@media (prefers-reduced-motion: reduce) {
+  .animate-cta-pulse {
+    animation: none !important;
+  }
+}
+
+/* --- Beat Card 2025 Modernization --- */
+/* Neon pill base */
+.neon-pill {
+  --np-color: #94a3b8; /* slate fallback */
+  position: relative;
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 1;
+  color: #fff;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid var(--np-color);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  transition: box-shadow 220ms ease, border-color 220ms ease,
+    transform 220ms ease;
+  transform: translateZ(0);
+}
+.neon-pill:hover {
+  box-shadow: 0 0 14px color-mix(in oklab, var(--np-color) 45%, transparent 55%);
+}
+.np-red {
+  --np-color: #ef4444;
+}
+.np-orange {
+  --np-color: #f97316;
+}
+.np-cyan {
+  --np-color: #22d3ee;
+}
+.np-purple {
+  --np-color: #a78bfa;
+}
+.np-blue {
+  --np-color: #60a5fa;
+}
+.np-pink {
+  --np-color: #f472b6;
+}
+.np-slate {
+  --np-color: #94a3b8;
+}
+
+/* Dark glow button to match hero CTA */
+.btn-dark-glow {
+  background-image: linear-gradient(to right, #000, #0a0a0a, #171717);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 220ms ease, box-shadow 220ms ease, background 220ms ease;
+}
+.btn-dark-glow:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 36px rgba(168, 142, 255, 0.18),
+    0 10px 30px -12px rgba(0, 0, 0, 0.6);
+}
+.btn-dark-glow:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1),
+    0 0 28px rgba(168, 142, 255, 0.22);
+}
+
+/* Cart icon micro-interaction */
+.group\/button:hover .cart-nudge {
+  transform: translateY(-1px) scale(1.06);
+}
+.cart-nudge {
+  transition: transform 220ms ease;
+  transform: translateZ(0);
+}
+
+/* Price underline animation */
+.kfi-price-underline {
+  position: relative;
+}
+.kfi-price-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  height: 2px;
+  width: 0%;
+  background: linear-gradient(
+    90deg,
+    rgba(236, 72, 153, 0.6),
+    rgba(59, 130, 246, 0.6)
+  );
+  transition: width 220ms ease;
+}
+.kfi-price-underline:hover::after {
+  width: 100%;
+}
+
+/* Glass card subtle inner highlight */
+.glass-card {
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
+}
+
+/* Buy button region subtle pulse on hover */
+.card-buy-zone:hover .btn-dark-glow {
+  transform: scale(1.05);
+}
+.card-buy-zone:hover .cart-nudge {
+  transform: translateY(-1px) scale(1.06);
+}
+
+/* Neon card contour/glow (genre tinted) */
+.card-contour {
+  --nc-rgb: 148, 163, 184; /* slate fallback */
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem; /* matches rounded-xl */
+  border: 1px solid rgba(var(--nc-rgb), 0.22);
+  box-shadow: 0 0 0 1px rgba(var(--nc-rgb), 0.22),
+    0 0 36px rgba(var(--nc-rgb), 0.18),
+    0 12px 60px -16px rgba(var(--nc-rgb), 0.1);
+  transition: box-shadow 220ms ease, border-color 220ms ease, opacity 220ms ease;
+}
+.card-contour::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  background: rgba(var(--nc-rgb), 0.1);
+  filter: blur(18px);
+  opacity: 0.6;
+  transition: opacity 220ms ease, filter 220ms ease;
+  pointer-events: none;
+}
+.group:hover .card-contour {
+  border-color: rgba(var(--nc-rgb), 0.32);
+  box-shadow: 0 0 0 1px rgba(var(--nc-rgb), 0.32),
+    0 0 60px rgba(var(--nc-rgb), 0.26),
+    0 16px 80px -16px rgba(var(--nc-rgb), 0.16);
+}
+.group:hover .card-contour::after {
+  opacity: 0.9;
+  filter: blur(22px);
+}
+
+/* Unified footer glass bar + glowing accent line */
+.footer-glass {
+  position: relative;
+  background: rgba(10, 10, 10, 0.9);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.footer-glow-line {
+  position: relative;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(147, 51, 234, 0.22),
+    /* purple */ rgba(236, 72, 153, 0.22),
+    /* pink */ rgba(59, 130, 246, 0.22) /* blue */
+  );
+  background-size: 200% 100%;
+  box-shadow: 0 0 24px rgba(168, 142, 255, 0.14);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .footer-glow-line {
+    animation: footer-shift 12s ease-in-out infinite alternate;
+  }
+}
+@keyframes footer-shift {
+  0% {
+    background-position: 0% 50%;
+    opacity: 0.7;
+  }
+  100% {
+    background-position: 100% 50%;
+    opacity: 1;
+  }
+}
+
+/* Form field and testimonial auras */
+.field-wrapper {
+  border-radius: 0.75rem;
+}
+/* Contour-only gradient ring for inputs/textarea (no fill tint) */
+.field-aura {
+  position: absolute;
+  inset: -2px; /* thinner contour */
+  border-radius: calc(0.75rem + 2px);
+  padding: 2px; /* thin ring thickness */
+  background: linear-gradient(
+    90deg,
+    rgba(244, 114, 182, 0.45),
+    rgba(250, 204, 21, 0.32),
+    rgba(253, 186, 116, 0.3)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude; /* show only the border area */
+  pointer-events: none;
+  filter: drop-shadow(0 0 10px rgba(253, 186, 116, 0.12));
+  transition: filter 220ms ease, opacity 220ms ease;
+}
+.group:focus-within .field-aura,
+.group:hover .field-aura {
+  filter: drop-shadow(0 0 16px rgba(253, 186, 116, 0.18));
+}
+
+/* Disable testimonial aura fill to keep cards black */
+.testimonial-aura {
+  display: none;
+}
+
+/* Respect prefers-reduced-motion; otherwise, gently pulse like the CTA */
+@media (prefers-reduced-motion: no-preference) {
+  .field-aura,
+  .testimonial-aura {
+    animation: cta-pulse-scale 3.2s ease-in-out infinite;
+  }
+}
+.nc-red {
+  --nc-rgb: 239, 68, 68;
+}
+.nc-orange {
+  --nc-rgb: 249, 115, 22;
+}
+.nc-cyan {
+  --nc-rgb: 34, 211, 238;
+}
+.nc-purple {
+  --nc-rgb: 167, 139, 250;
+}
+.nc-blue {
+  --nc-rgb: 96, 165, 250;
+}
+.nc-pink {
+  --nc-rgb: 244, 114, 182;
+}
+.nc-slate {
+  --nc-rgb: 148, 163, 184;
+}
+
+/* Variant: contour-only (no ambient ::after fill) */
+.card-contour.contour-only::after {
+  display: none;
+}
+
+/* Variant: warm gradient contour (no fill) */
+.card-contour.warm-gradient {
+  border: 1px solid transparent;
+  background: linear-gradient(
+      90deg,
+      rgba(244, 114, 182, 0.45),
+      rgba(250, 204, 21, 0.32),
+      rgba(253, 186, 116, 0.3)
+    )
+    border-box;
+  -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  box-shadow: 0 0 0 1px rgba(253, 186, 116, 0.12),
+    0 0 24px rgba(253, 186, 116, 0.12),
+    0 12px 36px -16px rgba(253, 186, 116, 0.1);
+}
+
+/* Variant: warm glow halo (soft gradient glow, no interior tint) */
+.card-contour.warm-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem;
+  border: 1px solid transparent;
+  /* gradient border without affecting background */
+  border-image: linear-gradient(
+      90deg,
+      rgba(244, 114, 182, 0.45),
+      rgba(250, 204, 21, 0.32),
+      rgba(253, 186, 116, 0.3)
+    )
+    1;
+  /* soft outer glow; background stays pure black */
+  box-shadow: 0 0 18px rgba(253, 186, 116, 0.16);
+  pointer-events: none;
+}
+.group:hover .card-contour.warm-glow {
+  box-shadow: 0 0 24px rgba(253, 186, 116, 0.22);
+}
+
+/* Subtle neon hover for footer links */
+.kfi-link {
+  transition: color 300ms ease, text-shadow 300ms ease;
+}
+.kfi-link:hover {
+  color: #fff;
+  text-shadow: 0 0 10px rgba(236, 72, 153, 0.35),
+    0 0 16px rgba(59, 130, 246, 0.25);
+}
+
+/* --- Consistent glass + aura utilities for 2025 polish --- */
+/* Dark glass surface (semi-transparent black with blur + subtle border) */
+.kfi-glass-dark {
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Warm gradient aura: hidden by default, appears on hover/focus of a parent .group */
+.kfi-aura-warm {
+  position: absolute;
+  inset: -1rem; /* approx -inset-4, responsive tweaks done in markup if needed */
+  border-radius: 1rem; /* match rounded-xl/2xl via markup when needed */
+  background: linear-gradient(
+    90deg,
+    rgba(244, 114, 182, 0.25),
+    rgba(250, 204, 21, 0.22),
+    rgba(253, 186, 116, 0.22)
+  );
+  filter: blur(24px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease, filter 220ms ease, transform 220ms ease;
+}
+.group:hover .kfi-aura-warm {
+  opacity: 0.35;
+}
+.group:focus-within .kfi-aura-warm {
+  opacity: 0.45;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .group:hover .kfi-aura-warm {
+    animation: cta-pulse-scale 3.2s ease-in-out infinite;
+  }
+}
+
+/* Thin variant for tighter elements */
+.kfi-aura-warm.thin {
+  inset: -0.75rem; /* approx -inset-3 */
+  filter: blur(20px);
+}
+
+/* Optional: neutral aura for white focus emphasis */
+.kfi-aura-neutral {
+  position: absolute;
+  inset: -0.75rem;
+  border-radius: 1rem;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  filter: blur(16px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease, filter 200ms ease;
+}
+.group:focus-within .kfi-aura-neutral {
+  opacity: 0.6;
 }

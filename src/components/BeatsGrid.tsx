@@ -94,7 +94,7 @@ const BeatsGrid = () => {
         </h3>
 
         {/* Mobile carousel feel via snap */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-8 [--cols:1] md:[--cols:3] md:overflow-visible overflow-x-auto snap-x snap-mandatory md:snap-none pb-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12 [--cols:1] md:[--cols:3] md:overflow-visible overflow-x-auto snap-x snap-mandatory md:snap-none pb-2">
           {beats.map((beat) => (
             <div
               key={beat.id}

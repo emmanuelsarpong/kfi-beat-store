@@ -1,85 +1,72 @@
 import React from "react";
-// import "./Header.css";
-import { ExternalLink } from "lucide-react";
 import kfiLogo from "@/assets/logo.png";
-
-const Header = () => (
-  <div className="header-container">
-    <div className="logo-tagline">
-      <div className="logo-box">
-        <img
-          src={kfiLogo}
-          alt="KFI Logo"
-          className="h-10 w-auto object-contain mr-3"
-        />
-        KFI
-      </div>
-      <span className="tagline">Premium beats for the modern sound</span>
-    </div>
-    <hr className="header-divider" />
-  </div>
-);
+import MiniPlayer from "@/components/MiniPlayer";
 
 const Footer = () => (
-  <footer className="relative bg-black text-gray-400 py-10 md:py-12 mt-12 border-t border-gray-800">
-    {/* Watermark */}
-    <div className="absolute inset-0 items-center justify-center opacity-5 z-0 text-8xl font-bold pointer-events-none select-none hidden md:flex md:items-center md:justify-center">
-      <span>KFI</span>
-    </div>
-    <div className="relative z-10 container mx-auto px-4 max-w-7xl flex flex-col md:flex-row items-center justify-between">
-      {/* Left: Logo & Tagline */}
-      <div className="flex items-center mb-6 md:mb-0">
-        <img
-          src={kfiLogo}
-          alt="KFI Logo"
-          className="h-10 w-auto object-contain mr-3"
-        />
-        <span className="text-zinc-200 font-semibold">
-          Premium beats for the modern sound
-        </span>
+  <footer className="relative mt-16">
+    {/* Animated thin gradient divider at top */}
+    <div className="footer-glow-line" />
+
+    {/* Slim, modern glass footer */}
+    <div className="footer-glass text-gray-400">
+      <div className="relative z-10 mx-auto px-4 max-w-7xl">
+        {/* Responsive grid: stack on mobile, 3 columns from md+ */}
+        <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4 py-3">
+          {/* Left: Logo only (no tagline) */}
+          <div className="flex items-center gap-2 min-w-0 justify-center md:justify-start">
+            <img
+              src={kfiLogo}
+              alt="KFI Logo"
+              className="h-6 w-auto object-contain"
+            />
+            <span className="text-xs md:text-sm text-zinc-300/90 hover:text-zinc-100 transition-colors truncate">
+              Premium Beats.
+            </span>
+          </div>
+
+          {/* Center: Player (slightly smaller, dock-like) */}
+          <div className="flex justify-center order-last md:order-none">
+            <div className="relative group mb-2">
+              {/* optional float above footer */}
+              <div className="kfi-aura-warm thin rounded-2xl" />
+              <div className="relative z-10 transition-all duration-300 ease-out hover:shadow-[0_0_10px_rgba(255,0,128,0.4)] rounded-xl">
+                <MiniPlayer mode="footer" />
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Navigation links */}
+          <nav className="flex justify-center md:justify-end items-center gap-4 md:gap-6 text-sm">
+            <a href="#beats" className="kfi-link text-zinc-300/90">
+              Beats
+            </a>
+            <a href="#contact" className="kfi-link text-zinc-300/90">
+              Contact
+            </a>
+            <a href="/privacy" className="kfi-link text-zinc-300/90">
+              Privacy
+            </a>
+            <a href="/terms" className="kfi-link text-zinc-300/90">
+              Terms
+            </a>
+            <a
+              href="https://instagram.com/thisiskfi"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="kfi-link text-zinc-300/90"
+            >
+              @thisiskfi
+            </a>
+          </nav>
+        </div>
+
+        {/* Bottom: Copyright */}
+        <div className="pb-2 text-center text-[10px] md:text-xs text-gray-500/80">
+          © {new Date().getFullYear()} KFI Music. All rights reserved.
+        </div>
       </div>
-      {/* Right: Links */}
-      <nav className="flex space-x-8">
-        <a
-          href="#beats"
-          className="hover:text-white hover:underline transition-colors font-medium"
-        >
-          Beats
-        </a>
-        <a
-          href="#contact"
-          className="hover:text-white hover:underline transition-colors font-medium"
-        >
-          Contact
-        </a>
-        <a
-          href="/privacy"
-          className="hover:text-white hover:underline transition-colors font-medium"
-        >
-          Privacy
-        </a>
-        <a
-          href="/terms"
-          className="hover:text-white hover:underline transition-colors font-medium"
-        >
-          Terms
-        </a>
-        <a
-          href="https://twitter.com/kfiaudio"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-white hover:underline transition-colors font-medium"
-        >
-          @thisiskfi
-        </a>
-      </nav>
-    </div>
-    {/* Bottom: Copyright */}
-    <div className="relative z-10 mt-8 text-center text-xs text-gray-500">
-      &copy; {new Date().getFullYear()} KFI Music. All rights reserved.
     </div>
   </footer>
 );
 
-export { Header, Footer };
 export default Footer;

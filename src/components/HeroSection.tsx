@@ -48,7 +48,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-[66vh] flex items-center justify-center py-8 bg-black overflow-hidden w-full">
+    <section className="relative min-h-[66vh] flex items-center justify-center py-16 md:py-24 bg-black overflow-hidden w-full">
       <video
         src={studioVideo}
         autoPlay
@@ -61,24 +61,28 @@ const HeroSection = () => {
       <div className="absolute inset-0 w-full h-full bg-[#0B0F1A] opacity-40 pointer-events-none z-10" />
       {/* Gradient overlay at bottom */}
       <div className="pointer-events-none absolute bottom-0 w-full h-24 bg-gradient-to-b from-transparent to-black z-20" />
-      {/* Subtle animated EQ bars behind heading */}
-      <div className="absolute inset-0 z-20 flex items-center justify-center opacity-25">
-        <div className="flex gap-1">
-          {Array.from({ length: 16 }).map((_, i) => (
-            <span key={i} className={`kfi-eq-bar`} />
-          ))}
-        </div>
-      </div>
       <div className="relative z-30 flex flex-col items-center w-full">
         <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-4 text-center">
           Premium beats for the modern sound
         </h1>
         <div className="flex-1" />
-        <div className="relative mt-8">
-          <div className="absolute -inset-2 rounded-xl bg-gradient-to-r from-purple-500/40 to-blue-500/40 blur opacity-60 group-hover:opacity-90 transition" />
+        {/* CTA with subtle aura and synced waves behind */}
+        <div className="relative mt-10 group">
+          {/* Glow aura (warm) behind button */}
+          <div className="pointer-events-none absolute -inset-4 md:-inset-5 rounded-2xl bg-gradient-to-r from-rose-500/25 via-orange-500/25 to-amber-400/25 blur-xl opacity-30 group-hover:opacity-40 transition-opacity animate-cta-pulse" />
+          {/* Waves behind button as atmospheric motion */}
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-10 opacity-25 animate-cta-pulse">
+            <div className="kfi-cta-waves scale-90 md:scale-100">
+              <div className="flex items-end justify-center gap-1.5">
+                {Array.from({ length: 16 }).map((_, i) => (
+                  <span key={i} className="kfi-eq-bar" />
+                ))}
+              </div>
+            </div>
+          </div>
           <Button
             size="lg"
-            className="relative px-8 py-3 bg-white/90 text-black font-semibold rounded-xl shadow hover:bg-white transition-all duration-200 ease-in-out hover:scale-105"
+            className="relative z-20 px-9 py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-black via-zinc-900 to-zinc-800 hover:from-zinc-900 hover:via-zinc-800 hover:to-zinc-700 shadow-lg hover:shadow-amber-500/25 hover:scale-105 btn-ripple ring-1 ring-white/10 focus-visible:ring-2 focus-visible:ring-amber-400/50"
             onClick={goToStore}
           >
             Explore Beats

@@ -51,7 +51,7 @@ const Header = () => {
               <img
                 src={kfiLogo}
                 alt="KFI Logo"
-                className="h-10 w-10 rounded-full object-cover ring-2 ring-white/10"
+                className="h-10 w-10 object-contain"
               />
             </a>
           </div>
