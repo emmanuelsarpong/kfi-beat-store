@@ -13,7 +13,6 @@ import Index from "./pages/Index";
 import Store from "./pages/store";
 import NotFound from "./pages/NotFound";
 import MiniPlayer from "./components/MiniPlayer";
-import MobileNav from "./components/MobileNav";
 import { PlayerProvider } from "@/hooks/PlayerProvider";
 import CookieBanner from "./components/CookieBanner";
 
@@ -89,8 +88,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </RouteFade>
-          {/* Components that need Router context should render inside Router */}
-          <MobileNav />
+          {/* Mobile bottom nav removed for responsive website design */}
         </Router>
         <RevealManager />
         <CookieBanner />

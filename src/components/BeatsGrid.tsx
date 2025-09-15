@@ -84,7 +84,7 @@ const beats: Beat[] = [
 
 const BeatsGrid = () => {
   return (
-    <section id="beats" className="py-16 px-4">
+    <section id="beats" className="py-16 px-4 scroll-mt-24">
       <div className="container mx-auto max-w-7xl p-0 md:px-4">
         <h3 className="text-3xl font-bold text-center mb-8">
           Latest{" "}
@@ -94,11 +94,11 @@ const BeatsGrid = () => {
         </h3>
 
         {/* Mobile carousel feel via snap */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12 [--cols:1] md:[--cols:3] md:overflow-visible overflow-x-auto snap-x snap-mandatory md:snap-none pb-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 md:gap-12 [--cols:1] md:[--cols:3] md:overflow-visible overflow-x-auto snap-x snap-mandatory md:snap-none pb-2">
           {beats.map((beat) => (
             <div
               key={beat.id}
-              className="snap-center md:snap-none min-w-[80%] xs:min-w-[60%] sm:min-w-0"
+              className="snap-center md:snap-none min-w-[85%] xs:min-w-[65%] sm:min-w-0"
             >
               <BeatCard beat={beat} />
             </div>

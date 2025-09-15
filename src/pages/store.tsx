@@ -2,7 +2,7 @@ import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BeatCard from "@/components/BeatCard";
-import BpmFilter from "@/components/BpmFilter";
+import BPMFilter from "@/components/BPMFilter";
 
 const beats = [
   {
@@ -265,6 +265,7 @@ const Store = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
             <select
+                aria-label="Filter by genre"
               className="px-4 py-2 rounded bg-zinc-900 text-white border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-500 w-full sm:w-48"
               value={genre}
               onChange={(e) => setGenre(e.target.value)}
@@ -276,7 +277,7 @@ const Store = () => {
                 </option>
               ))}
             </select>
-            <BpmFilter
+            <BPMFilter
               bpmRange={bpmRange}
               setBpmRange={setBpmRange}
               bpmExact={bpmExact}

@@ -11,7 +11,10 @@ const Index = () => (
     <HeroSection />
     <BeatsGrid />
     {/* Contact form section */}
-    <section className="py-16 md:py-24 px-4 bg-black reveal">
+    <section
+      id="contact"
+      className="py-16 md:py-24 px-4 bg-black reveal scroll-mt-24"
+    >
       <ContactForm />
     </section>
     <Footer />

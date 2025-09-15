@@ -118,12 +118,12 @@ const BeatCard = ({ beat }: BeatCardProps) => {
             src={beat.coverImage}
             alt={beat.title}
             loading="lazy"
-            className="w-full h-48 object-cover transition-transform duration-300 ease-in-out md:group-hover:scale-[1.03] group-hover:scale-[1.02]"
+            className="w-full h-44 sm:h-48 object-cover transition-transform duration-300 ease-in-out md:group-hover:scale-[1.03] group-hover:scale-[1.02]"
           />
           {/* top->bottom faint darkening for text clarity */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           {/* Play overlay */}
-          <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
             <Button
               onClick={handlePlayClick}
               size="lg"

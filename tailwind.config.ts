@@ -11,9 +11,6 @@ export default {
   ],
   prefix: "",
   theme: {
-    screens: {
-      xs: "480px",
-    },
     container: {
       center: true,
       padding: "2rem",
@@ -22,6 +19,9 @@ export default {
       },
     },
     extend: {
+      screens: {
+        xs: "480px",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
