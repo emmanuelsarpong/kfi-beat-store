@@ -18,8 +18,8 @@ const Header = () => {
     }
   };
 
-  const handleContactClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleContactClick = (e?: React.MouseEvent) => {
+    e?.preventDefault?.();
     if (location.pathname === "/") {
       // Already on home, just scroll
       const section = document.getElementById("contact");
@@ -46,13 +46,12 @@ const Header = () => {
             <a
               href="/"
               onClick={handleLogoClick}
-              className="flex items-center gap-2"
-              style={{ cursor: "pointer" }}
+              className="flex items-center gap-2 cursor-pointer"
             >
               <img
                 src={kfiLogo}
                 alt="KFI Logo"
-                className="h-10 object-contain"
+                className="h-10 w-10 rounded-full object-cover ring-2 ring-white/10"
               />
             </a>
           </div>
@@ -101,10 +100,9 @@ const Header = () => {
           {/* Centered modal menu */}
           <div className="relative z-10 flex flex-col items-center justify-center w-full h-full">
             <button
-              className="fixed top-4 right-4 text-white p-2 z-50"
+              className="fixed top-4 right-4 text-white p-2 z-50 bg-transparent border-0 -mt-2"
               onClick={() => setOpen(false)}
               aria-label="Close menu"
-              style={{ background: "none", border: "none", marginTop: -8 }}
             >
               <X className="h-7 w-7" />
             </button>
@@ -122,7 +120,7 @@ const Header = () => {
                 className="text-3xl font-bold text-white"
                 onClick={() => {
                   setOpen(false);
-                  handleContactClick(new MouseEvent("click"));
+                  handleContactClick();
                 }}
               >
                 Contact

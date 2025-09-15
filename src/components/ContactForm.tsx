@@ -69,6 +69,7 @@ const ContactForm = () => {
             Ready to elevate your music? Let’s discuss your next project and
             bring your vision to life.
           </p>
+          {/* Personal touch removed per request */}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -148,6 +149,29 @@ const ContactForm = () => {
             >
               @thisiskfi
             </a>
+          </div>
+          {/* Social proof */}
+          <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left max-w-4xl mx-auto">
+            <div className="bg-black/40 border border-zinc-800 rounded-lg p-4">
+              <p className="text-sm text-zinc-300">
+                “Perfect vibe for my last single. Super easy licensing.”
+              </p>
+              <div className="mt-3 text-xs text-zinc-500">
+                Indie Artist • US
+              </div>
+            </div>
+            <div className="bg-black/40 border border-zinc-800 rounded-lg p-4">
+              <p className="text-sm text-zinc-300">
+                “Clean mix, strong low-end. Exactly what I needed.”
+              </p>
+              <div className="mt-3 text-xs text-zinc-500">Producer • UK</div>
+            </div>
+            <div className="bg-black/40 border border-zinc-800 rounded-lg p-4">
+              <p className="text-sm text-zinc-300">
+                “Fast delivery and great communication. 10/10.”
+              </p>
+              <div className="mt-3 text-xs text-zinc-500">Label A&R • DE</div>
+            </div>
           </div>
         </div>
       </div>

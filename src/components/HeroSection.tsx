@@ -61,21 +61,29 @@ const HeroSection = () => {
       <div className="absolute inset-0 w-full h-full bg-[#0B0F1A] opacity-40 pointer-events-none z-10" />
       {/* Gradient overlay at bottom */}
       <div className="pointer-events-none absolute bottom-0 w-full h-24 bg-gradient-to-b from-transparent to-black z-20" />
+      {/* Subtle animated EQ bars behind heading */}
+      <div className="absolute inset-0 z-20 flex items-center justify-center opacity-25">
+        <div className="flex gap-1">
+          {Array.from({ length: 16 }).map((_, i) => (
+            <span key={i} className={`kfi-eq-bar`} />
+          ))}
+        </div>
+      </div>
       <div className="relative z-30 flex flex-col items-center w-full">
-        <h1
-          className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-4"
-          style={{ textAlign: "center" }}
-        >
+        <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-4 text-center">
           Premium beats for the modern sound
         </h1>
         <div className="flex-1" />
-        <Button
-          size="lg"
-          className="mt-8 px-8 py-3 bg-white/90 text-black font-semibold rounded shadow hover:bg-white transition-all duration-200 ease-in-out hover:scale-105"
-          onClick={goToStore}
-        >
-          Explore Beats
-        </Button>
+        <div className="relative mt-8">
+          <div className="absolute -inset-2 rounded-xl bg-gradient-to-r from-purple-500/40 to-blue-500/40 blur opacity-60 group-hover:opacity-90 transition" />
+          <Button
+            size="lg"
+            className="relative px-8 py-3 bg-white/90 text-black font-semibold rounded-xl shadow hover:bg-white transition-all duration-200 ease-in-out hover:scale-105"
+            onClick={goToStore}
+          >
+            Explore Beats
+          </Button>
+        </div>
       </div>
     </section>
   );

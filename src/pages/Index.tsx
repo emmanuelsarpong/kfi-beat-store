@@ -12,7 +12,7 @@ const Index = () => (
     <BeatsGrid />
     {/* Contact form section */}
     <section id="contact" className="py-16 px-4 bg-black">
-        <ContactForm />
+      <ContactForm />
     </section>
     <Footer />
   </div>

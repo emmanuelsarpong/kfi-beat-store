@@ -1,8 +1,9 @@
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Play, Pause, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { usePlayer } from "@/hooks/usePlayer";
 
 interface Beat {
   id: string;
@@ -20,20 +21,11 @@ interface BeatCardProps {
   beat: Beat;
 }
 
-const BeatCard = ({ beat, ...props }: BeatCardProps) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  const handlePlayPause = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
+const BeatCard = ({ beat }: BeatCardProps) => {
+  const { current, isPlaying, playTrack, toggle } = usePlayer();
+  const [hovering, setHovering] = useState(false);
+  const previewRef = useRef<HTMLAudioElement>(null);
+  const isCurrent = current?.audioUrl === beat.audioUrl;
 
   const handlePurchase = () => {
     if (beat.paymentLink) {
@@ -49,8 +41,60 @@ const BeatCard = ({ beat, ...props }: BeatCardProps) => {
       ? "https://buy.stripe.com/test_28E14g7W4gyR5BudbQ6AM00"
       : beat.paymentLink;
 
+  // hover preview: play up to 5s with fade in/out
+  useEffect(() => {
+    const audio = previewRef.current;
+    if (!audio) return;
+    let timeout: number | undefined;
+    if (hovering && !isCurrent) {
+      audio.currentTime = 0;
+      audio.volume = 0;
+      audio.play().catch(() => {});
+      // fade in
+      let v = 0;
+      const fadeIn = setInterval(() => {
+        v = Math.min(1, v + 0.1);
+        audio.volume = v * 0.5; // cap preview volume
+        if (v >= 1) clearInterval(fadeIn);
+      }, 50);
+      timeout = window.setTimeout(() => {
+        // fade out and stop
+        let out = audio.volume;
+        const fadeOut = setInterval(() => {
+          out = Math.max(0, out - 0.1);
+          audio.volume = out;
+          if (out <= 0) {
+            clearInterval(fadeOut);
+            audio.pause();
+          }
+        }, 50);
+      }, 5000);
+    } else {
+      audio.pause();
+    }
+    return () => {
+      if (timeout) window.clearTimeout(timeout);
+      audio.pause();
+    };
+  }, [hovering, isCurrent]);
+
+  const handlePlayClick = () => {
+    if (isCurrent) toggle();
+    else
+      playTrack({
+        id: beat.id,
+        title: beat.title,
+        audioUrl: beat.audioUrl,
+        coverImage: beat.coverImage,
+      });
+  };
+
   return (
-    <Card className="group bg-gray-900/50 border border-gray-800 hover:border-gray-700 transition-transform duration-200 ease-out hover:-translate-y-1 rounded-md">
+    <Card
+      className="group bg-gray-900/50 border border-gray-800 hover:border-gray-700 transition-transform duration-200 ease-out hover:-translate-y-1 hover:shadow-xl rounded-md"
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+    >
       <CardContent className="p-0">
         <div className="relative overflow-hidden rounded-t-md">
           <img
@@ -61,11 +105,11 @@ const BeatCard = ({ beat, ...props }: BeatCardProps) => {
           />
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <Button
-              onClick={handlePlayPause}
+              onClick={handlePlayClick}
               size="lg"
               className="rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 border-0"
             >
-              {isPlaying ? (
+              {isCurrent && isPlaying ? (
                 <Pause className="h-6 w-6" />
               ) : (
                 <Play className="h-6 w-6 ml-1" />
@@ -110,7 +154,8 @@ const BeatCard = ({ beat, ...props }: BeatCardProps) => {
           </div>
         </div>
 
-        <audio ref={audioRef} onEnded={() => setIsPlaying(false)}>
+        {/* silent preview element */}
+        <audio ref={previewRef}>
           <source src={beat.audioUrl} type="audio/mpeg" />
         </audio>
       </CardContent>

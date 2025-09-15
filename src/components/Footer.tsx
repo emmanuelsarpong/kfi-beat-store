@@ -53,6 +53,18 @@ const Footer = () => (
           Contact
         </a>
         <a
+          href="/privacy"
+          className="hover:text-white hover:underline transition-colors font-medium"
+        >
+          Privacy
+        </a>
+        <a
+          href="/terms"
+          className="hover:text-white hover:underline transition-colors font-medium"
+        >
+          Terms
+        </a>
+        <a
           href="https://twitter.com/kfiaudio"
           target="_blank"
           rel="noopener noreferrer"

@@ -1,3 +1,4 @@
+import React from "react";
 import BeatCard from "./BeatCard";
 
 interface Beat {
@@ -85,15 +86,22 @@ const BeatsGrid = () => {
   return (
     <section id="beats" className="py-16 px-4">
       <div className="container mx-auto max-w-7xl p-0 md:px-4">
-        <h3 className="text-3xl font-bold text-center mb-12">
+        <h3 className="text-3xl font-bold text-center mb-8">
           Latest{" "}
           <span className="bg-gradient-to-r from-zinc-300 via-zinc-400 to-zinc-200 bg-clip-text text-transparent font-semibold">
             Beats
           </span>
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+        {/* Mobile carousel feel via snap */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-8 [--cols:1] md:[--cols:3] md:overflow-visible overflow-x-auto snap-x snap-mandatory md:snap-none pb-2">
           {beats.map((beat) => (
-            <BeatCard key={beat.id} beat={beat} />
+            <div
+              key={beat.id}
+              className="snap-center md:snap-none min-w-[80%] xs:min-w-[60%] sm:min-w-0"
+            >
+              <BeatCard beat={beat} />
+            </div>
           ))}
         </div>
       </div>
