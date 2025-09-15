@@ -50,6 +50,8 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ mode = "floating" }) => {
               src={current.coverImage}
               className="w-full h-full object-cover"
               alt={current.title}
+              decoding="async"
+              loading="lazy"
             />
           ) : (
             <div className="flex items-center gap-[2px]">

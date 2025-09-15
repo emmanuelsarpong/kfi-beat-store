@@ -133,7 +133,7 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
               <div
                 role="img"
                 aria-label={`${beat.title} cover artwork (abstract gradient)`}
-                className={`grad-beat-base ${gradClass}`}
+                className={`grad-beat-base ${gradClass} transition-transform duration-500 ease-out group-hover/cover:scale-105`}
               />
             );
           })()}
@@ -163,8 +163,8 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
               strokeWidth={1.8}
             />
           </button>
-          {/* top->bottom faint darkening for text clarity */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          {/* top->bottom darkening for text clarity */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/65 opacity-100 transition-opacity duration-300" />
           {/* Play overlay */}
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
             <Button
@@ -194,11 +194,33 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
         {/* Stronger blur behind text area for depth */}
         <div className="relative">
           <div className="pointer-events-none absolute -inset-x-0 -top-6 bottom-0 bg-black/30 backdrop-blur-md" />
-          <div className="relative p-4 space-y-4">
+          <div className="relative p-5 space-y-4">
             <div>
               <h3 className="font-semibold text-white text-xl tracking-tight">
                 {beat.title}
               </h3>
+              {/* Highlight badges (demo-driven until data supports it) */}
+              {(() => {
+                const topSeller = ["Midnight Drive", "Neon Dreams"].includes(
+                  beat.title
+                );
+                const isNew = ["Afterglow", "Deep Space"].includes(beat.title);
+                if (!topSeller && !isNew) return null;
+                return (
+                  <div className="mt-2 flex items-center gap-2">
+                    {topSeller && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/30">
+                        Top Seller
+                      </span>
+                    )}
+                    {isNew && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
+                        New
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="flex flex-wrap items-center gap-2 mt-3">
                 {/* Genre neon pill */}
                 <button
@@ -238,14 +260,14 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
                 {/* Button matches hero CTA classes exactly */}
                 <Button
                   asChild
-                  className="relative z-20 px-9 py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-black via-zinc-900 to-zinc-800 hover:from-zinc-900 hover:via-zinc-800 hover:to-zinc-700 shadow-lg hover:shadow-amber-500/25 hover:scale-105 btn-ripple ring-1 ring-white/10 focus-visible:ring-2 focus-visible:ring-amber-400/50 group/button"
+                  className="relative z-20 px-8 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-black via-zinc-900 to-zinc-800 hover:from-zinc-900 hover:via-zinc-800 hover:to-zinc-700 btn-dark-glow hover:scale-105 btn-ripple ring-1 ring-white/10 focus-visible:ring-2 focus-visible:ring-amber-400/50 group/button transition-transform duration-200 ease-out"
                 >
                   <a
                     href={paymentLink || "#"}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <ShoppingCart className="h-4 w-4 mr-2 cart-nudge" />
+                    <ShoppingCart className="h-4 w-4 mr-2 cart-nudge transition-transform duration-200 ease-out group-hover/button:-translate-y-0.5" />
                     Buy Now
                   </a>
                 </Button>

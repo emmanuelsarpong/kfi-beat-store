@@ -52,6 +52,8 @@ const Header = () => {
                 src={kfiLogo}
                 alt="KFI Logo"
                 className="h-10 w-10 object-contain"
+                decoding="async"
+                loading="lazy"
               />
             </a>
           </div>

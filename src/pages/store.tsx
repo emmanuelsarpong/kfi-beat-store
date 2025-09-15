@@ -52,7 +52,7 @@ const Store = () => {
       <main className="flex-1 w-full">
         {/* Increased vertical padding for more breathing room */}
         <section className="pt-20 pb-16 px-2 sm:px-4 max-w-7xl mx-auto w-full">
-          <div className="mb-8 text-center space-y-4">
+          <div className="mb-10 sm:mb-12 text-center space-y-5">
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-zinc-200 via-white to-zinc-300 bg-clip-text text-transparent">
               🎧 Explore the Catalog
             </h1>
@@ -62,9 +62,9 @@ const Store = () => {
             </p>
           </div>
           {/* Subtle gradient divider for visual separation */}
-          <div className="mx-auto h-px w-full max-w-3xl bg-gradient-to-r from-transparent via-zinc-700/60 to-transparent mb-10" />
+          <div className="mx-auto h-px w-full max-w-3xl bg-gradient-to-r from-transparent via-zinc-700/60 to-transparent mb-12" />
           {/* Responsive Search Bar */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-10 justify-center reveal relative z-10">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-12 justify-center reveal relative z-10">
             <input
               type="text"
               placeholder="Search by title or genre..."
@@ -99,7 +99,7 @@ const Store = () => {
               Failed to load beats.
             </div>
           )}
-          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-6 sm:gap-y-14 sm:gap-x-8">
             {loading &&
               !beats &&
               Array.from({ length: 9 }).map((_, i) => <SkeletonCard key={i} />)}

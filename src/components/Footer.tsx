@@ -22,6 +22,8 @@ const Footer = () => {
                   src={kfiLogo}
                   alt="KFI Logo"
                   className="h-8 w-auto object-contain drop-shadow-[0_0_6px_rgba(255,255,255,0.12)]"
+                  decoding="async"
+                  loading="lazy"
                 />
               </div>
               <p className="text-xs leading-relaxed max-w-[240px] text-zinc-400/80">
