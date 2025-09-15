@@ -9,9 +9,11 @@ import {
   useLocation,
 } from "react-router-dom";
 import React from "react";
-import Index from "./pages/Index";
-import Store from "./pages/store";
-import NotFound from "./pages/NotFound";
+import { Suspense, lazy } from "react";
+import LoadingSpinner from "@/components/LoadingSpinner";
+const Index = lazy(() => import("./pages/Index"));
+const Store = lazy(() => import("./pages/store"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 import MiniPlayer from "./components/MiniPlayer";
 import { PlayerProvider } from "@/hooks/PlayerProvider";
 import CookieBanner from "./components/CookieBanner";
@@ -39,39 +41,45 @@ const RevealManager: React.FC = () => {
       });
     };
 
-    if ("IntersectionObserver" in window) {
-      const io = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("is-visible");
-              io.unobserve(entry.target);
-            }
-          });
-        },
-        { root: null, rootMargin: "0px 0px -10% 0px", threshold: 0.1 }
-      );
-
-      const nodes = document.querySelectorAll<HTMLElement>(".reveal");
-      nodes.forEach((n) => io.observe(n));
-
-      // In case elements are already in view on mount
-      requestAnimationFrame(() => {
-        nodes.forEach((n) => {
-          const rect = n.getBoundingClientRect();
-          if (rect.top < window.innerHeight && rect.bottom > 0) {
-            n.classList.add("is-visible");
-            io.unobserve(n);
-          }
-        });
-      });
-
-      return () => io.disconnect();
+    if (!("IntersectionObserver" in window)) {
+      showAll();
+      return;
     }
 
-    // Fallback for older environments
-    showAll();
-    return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            io.unobserve(entry.target);
+          }
+        });
+      },
+      { root: null, rootMargin: "0px 0px -10% 0px", threshold: 0.1 }
+    );
+
+    const observeNew = () => {
+      document
+        .querySelectorAll<HTMLElement>(".reveal:not(.reveal-bound)")
+        .forEach((n) => {
+          n.classList.add("reveal-bound");
+          io.observe(n);
+        });
+    };
+
+    // Initial pass (after a microtask & next frame to allow lazy content to mount)
+    observeNew();
+    requestAnimationFrame(() => observeNew());
+    setTimeout(observeNew, 120); // safety pass for slower mounts
+
+    // MutationObserver to catch dynamically inserted nodes (e.g. lazy route content)
+    const mo = new MutationObserver(() => observeNew());
+    mo.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      mo.disconnect();
+      io.disconnect();
+    };
   }, [location.pathname]);
   return null;
 };
@@ -84,14 +92,22 @@ const App = () => (
           <Toaster />
           <Sonner />
           <Router>
-            <RouteFade>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/store" element={<Store />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </RouteFade>
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center min-h-[40vh]">
+                  <LoadingSpinner size="lg" />
+                </div>
+              }
+            >
+              <RouteFade>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/store" element={<Store />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </RouteFade>
+            </Suspense>
             <RevealManager />
             {/* Mobile bottom nav removed for responsive website design */}
           </Router>

@@ -1,253 +1,50 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BeatCard from "@/components/BeatCard";
 import BPMFilter from "@/components/BPMFilter";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import { useBeats } from "@/hooks/useBeats";
 
-const beats = [
-  {
-    id: "1",
-    title: "Midnight Drive",
-    genre: "Trap",
-    bpm: 140,
-    mood: "Dark",
-    price: 29.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop",
-  },
-  {
-    id: "2",
-    title: "Neon Dreams",
-    genre: "Synthwave",
-    bpm: 128,
-    mood: "Atmospheric",
-    price: 34.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop",
-  },
-  {
-    id: "3",
-    title: "Urban Flow",
-    genre: "Hip Hop",
-    bpm: 90,
-    mood: "Chill",
-    price: 24.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?w=300&h=300&fit=crop",
-  },
-  {
-    id: "4",
-    title: "Digital Pulse",
-    genre: "Electronic",
-    bpm: 132,
-    mood: "Energetic",
-    price: 39.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&h=300&fit=crop",
-  },
-  {
-    id: "5",
-    title: "Shadow Work",
-    genre: "Trap",
-    bpm: 145,
-    mood: "Aggressive",
-    price: 32.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=300&h=300&fit=crop",
-  },
-  {
-    id: "6",
-    title: "Cosmic Drift",
-    genre: "Ambient",
-    bpm: 110,
-    mood: "Dreamy",
-    price: 27.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=300&h=300&fit=crop",
-  },
-  {
-    id: "7",
-    title: "Sunset Vibes",
-    genre: "Lo-fi",
-    bpm: 85,
-    mood: "Relaxed",
-    price: 19.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=300&h=300&fit=crop",
-  },
-  {
-    id: "8",
-    title: "Night Runner",
-    genre: "Synthwave",
-    bpm: 122,
-    mood: "Retro",
-    price: 31.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?w=300&h=300&fit=crop",
-  },
-  {
-    id: "9",
-    title: "Golden Hour",
-    genre: "Pop",
-    bpm: 100,
-    mood: "Uplifting",
-    price: 26.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?w=300&h=300&fit=crop",
-  },
-  {
-    id: "10",
-    title: "Deep Space",
-    genre: "Ambient",
-    bpm: 60,
-    mood: "Ethereal",
-    price: 22.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?w=300&h=300&fit=crop",
-  },
-  {
-    id: "11",
-    title: "Bounce Back",
-    genre: "Hip Hop",
-    bpm: 95,
-    mood: "Confident",
-    price: 28.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&h=300&fit=crop",
-  },
-  {
-    id: "12",
-    title: "Electric Avenue",
-    genre: "Electronic",
-    bpm: 128,
-    mood: "Vibrant",
-    price: 36.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop",
-  },
-  {
-    id: "13",
-    title: "Cloud Surfing",
-    genre: "Lo-fi",
-    bpm: 78,
-    mood: "Chill",
-    price: 18.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=300&h=300&fit=crop",
-  },
-  {
-    id: "14",
-    title: "Pulse",
-    genre: "House",
-    bpm: 124,
-    mood: "Groovy",
-    price: 33.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?w=300&h=300&fit=crop",
-  },
-  {
-    id: "15",
-    title: "Dreamcatcher",
-    genre: "Ambient",
-    bpm: 72,
-    mood: "Peaceful",
-    price: 21.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=300&h=300&fit=crop",
-  },
-  {
-    id: "16",
-    title: "Starlight",
-    genre: "Pop",
-    bpm: 105,
-    mood: "Bright",
-    price: 27.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=300&h=300&fit=crop",
-  },
-  {
-    id: "17",
-    title: "Afterglow",
-    genre: "Synthwave",
-    bpm: 115,
-    mood: "Nostalgic",
-    price: 30.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop",
-  },
-  {
-    id: "18",
-    title: "Groove Machine",
-    genre: "House",
-    bpm: 126,
-    mood: "Funky",
-    price: 35.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&h=300&fit=crop",
-  },
-  {
-    id: "19",
-    title: "Rainy Days",
-    genre: "Lo-fi",
-    bpm: 82,
-    mood: "Moody",
-    price: 20.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=300&h=300&fit=crop",
-  },
-  {
-    id: "20",
-    title: "Firestarter",
-    genre: "Trap",
-    bpm: 150,
-    mood: "Intense",
-    price: 37.99,
-    audioUrl: "/api/placeholder-audio",
-    coverImage:
-      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop",
-  },
-];
-
-const uniqueGenres = [...new Set(beats.map((beat) => beat.genre))];
+const SkeletonCard: React.FC = () => (
+  <div className="reveal animate-pulse rounded-xl border border-zinc-800/60 bg-gradient-to-br from-zinc-900/60 to-zinc-800/40 h-72 flex flex-col">
+    <div className="h-36 w-full rounded-t-xl bg-zinc-800/60" />
+    <div className="p-4 space-y-3">
+      <div className="h-4 w-3/4 bg-zinc-700/50 rounded" />
+      <div className="flex gap-2">
+        <div className="h-5 w-14 bg-zinc-700/40 rounded-full" />
+        <div className="h-5 w-16 bg-zinc-700/40 rounded-full" />
+      </div>
+      <div className="h-6 w-16 bg-zinc-700/40 rounded" />
+    </div>
+  </div>
+);
 
 const Store = () => {
+  const { beats, loading, error } = useBeats();
   const [search, setSearch] = useState("");
   const [genre, setGenre] = useState("");
   const [bpmRange, setBpmRange] = useState<[number, number]>([1, 300]);
   const [bpmExact, setBpmExact] = useState<number | "">("");
   // Removed sortMode & vibe UI/state per design request
-
-  const working = beats.filter((beat) => {
-    const matchesSearch =
-      beat.title.toLowerCase().includes(search.toLowerCase()) ||
-      beat.genre.toLowerCase().includes(search.toLowerCase());
-    const matchesGenre = genre ? beat.genre === genre : true;
-    const matchesBpm =
-      bpmExact !== ""
-        ? beat.bpm === Number(bpmExact)
-        : beat.bpm >= bpmRange[0] && beat.bpm <= bpmRange[1];
-    return matchesSearch && matchesGenre && matchesBpm;
-  });
-  const filteredBeats = working;
+  const uniqueGenres = useMemo(
+    () => (beats ? [...new Set(beats.map((b) => b.genre))] : []),
+    [beats]
+  );
+  const filteredBeats = useMemo(() => {
+    if (!beats) return [];
+    return beats.filter((beat) => {
+      const matchesSearch =
+        beat.title.toLowerCase().includes(search.toLowerCase()) ||
+        beat.genre.toLowerCase().includes(search.toLowerCase());
+      const matchesGenre = genre ? beat.genre === genre : true;
+      const matchesBpm =
+        bpmExact !== ""
+          ? beat.bpm === Number(bpmExact)
+          : beat.bpm >= bpmRange[0] && beat.bpm <= bpmRange[1];
+      return matchesSearch && matchesGenre && matchesBpm;
+    });
+  }, [beats, search, genre, bpmRange, bpmExact]);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
@@ -297,19 +94,32 @@ const Store = () => {
           </div>
           {/* Removed vibe + sorting bar */}
           {/* Responsive Beats Grid */}
+          {error && (
+            <div className="text-center text-red-400 mb-8 reveal">
+              Failed to load beats.
+            </div>
+          )}
           <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
-            {filteredBeats.length > 0 ? (
-              filteredBeats.map((beat) => (
-                <div key={beat.id} className="reveal">
-                  <BeatCard beat={beat} />
-                </div>
-              ))
-            ) : (
+            {loading &&
+              !beats &&
+              Array.from({ length: 9 }).map((_, i) => <SkeletonCard key={i} />)}
+            {!loading && filteredBeats.length === 0 && (
               <div className="col-span-full text-center text-zinc-400">
                 No beats found.
               </div>
             )}
+            {!loading &&
+              filteredBeats.map((beat) => (
+                <div key={beat.id} className="reveal">
+                  <BeatCard beat={beat} />
+                </div>
+              ))}
           </div>
+          {loading && (
+            <div className="flex justify-center mt-10 reveal">
+              <LoadingSpinner />
+            </div>
+          )}
         </section>
       </main>
       <Footer />

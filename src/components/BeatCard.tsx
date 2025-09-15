@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Play, Pause, ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,7 +21,7 @@ interface BeatCardProps {
   beat: Beat;
 }
 
-const BeatCard = ({ beat }: BeatCardProps) => {
+const BeatCardBase = ({ beat }: BeatCardProps) => {
   const { current, isPlaying, playTrack, toggle } = usePlayer();
   const { isFavorite, toggle: toggleFav } = useFavorites();
   const [hovering, setHovering] = useState(false);
@@ -143,6 +143,7 @@ const BeatCard = ({ beat }: BeatCardProps) => {
             aria-label={
               favActive ? "Remove from favorites" : "Add to favorites"
             }
+            aria-pressed={favActive ? "true" : "false"}
             onClick={(e) => {
               e.stopPropagation();
               toggleFav({
@@ -262,4 +263,5 @@ const BeatCard = ({ beat }: BeatCardProps) => {
   );
 };
 
+const BeatCard = React.memo(BeatCardBase);
 export default BeatCard;
