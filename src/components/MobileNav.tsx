@@ -1,6 +1,11 @@
 import React from "react";
 import { Home, Grid3X3, ShoppingCart, Mail } from "lucide-react";
-import { Link, useLocation, useInRouterContext, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useInRouterContext,
+  useNavigate,
+} from "react-router-dom";
 
 const NavItem: React.FC<{
   to: string;

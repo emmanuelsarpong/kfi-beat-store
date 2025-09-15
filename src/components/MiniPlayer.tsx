@@ -43,17 +43,28 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ mode = "floating" }) => {
   return (
     <div className={containerClass}>
       <div className="grid grid-cols-[34px_1fr] gap-3 px-3 py-1.5">
-        {/* Cover */}
-        <img
-          src={current?.coverImage || "/placeholder.svg"}
-          className="w-8 h-8 rounded-md object-cover col-span-1 row-span-3"
-          alt="cover"
-        />
+        {/* Cover / Placeholder */}
+        <div className="w-8 h-8 rounded-md overflow-hidden col-span-1 row-span-3 bg-zinc-800/60 flex items-center justify-center">
+          {current?.coverImage ? (
+            <img
+              src={current.coverImage}
+              className="w-full h-full object-cover"
+              alt={current.title}
+            />
+          ) : (
+            <div className="flex items-center gap-[2px]">
+              <span className="block w-[3px] h-3 rounded-sm bg-zinc-500/70 animate-waveform [animation-delay:0s]" />
+              <span className="block w-[3px] h-4 rounded-sm bg-zinc-500/70 animate-waveform [animation-delay:0.12s]" />
+              <span className="block w-[3px] h-5 rounded-sm bg-zinc-500/70 animate-waveform [animation-delay:0.24s]" />
+              <span className="block w-[3px] h-4 rounded-sm bg-zinc-500/70 animate-waveform [animation-delay:0.36s]" />
+            </div>
+          )}
+        </div>
 
         {/* Line 1: title */}
         <div className="col-span-1 min-w-0">
           <div className="truncate text-[11px] md:text-sm font-semibold text-white flex items-center gap-1.5">
-            {current?.title || "Nothing playing"}
+            {current?.title || "Idle • Select a beat"}
             {isPlaying && (
               <span className="kfi-mini-wave" aria-hidden>
                 <span></span>
@@ -61,6 +72,11 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ mode = "floating" }) => {
                 <span></span>
                 <span></span>
                 <span></span>
+              </span>
+            )}
+            {!current && (
+              <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-md bg-zinc-800/70 border border-white/5 tracking-wide font-normal text-zinc-400">
+                READY
               </span>
             )}
           </div>
