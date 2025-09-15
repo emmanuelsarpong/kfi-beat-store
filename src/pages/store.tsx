@@ -234,8 +234,9 @@ const Store = () => {
   const [genre, setGenre] = useState("");
   const [bpmRange, setBpmRange] = useState<[number, number]>([1, 300]);
   const [bpmExact, setBpmExact] = useState<number | "">("");
+  // Removed sortMode & vibe UI/state per design request
 
-  const filteredBeats = beats.filter((beat) => {
+  const working = beats.filter((beat) => {
     const matchesSearch =
       beat.title.toLowerCase().includes(search.toLowerCase()) ||
       beat.genre.toLowerCase().includes(search.toLowerCase());
@@ -246,17 +247,27 @@ const Store = () => {
         : beat.bpm >= bpmRange[0] && beat.bpm <= bpmRange[1];
     return matchesSearch && matchesGenre && matchesBpm;
   });
+  const filteredBeats = working;
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header />
       <main className="flex-1 w-full">
-        <section className="py-8 px-2 sm:px-4 max-w-7xl mx-auto w-full">
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-6 text-center">
-            All Beats
-          </h1>
+        {/* Increased vertical padding for more breathing room */}
+        <section className="pt-20 pb-16 px-2 sm:px-4 max-w-7xl mx-auto w-full">
+          <div className="mb-8 text-center space-y-4">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-zinc-200 via-white to-zinc-300 bg-clip-text text-transparent">
+              🎧 Explore the Catalog
+            </h1>
+            <p className="text-zinc-400 text-sm sm:text-base max-w-2xl mx-auto">
+              Handcrafted sonic landscapes engineered for replay value. Dial in
+              a vibe, preview, and build faster.
+            </p>
+          </div>
+          {/* Subtle gradient divider for visual separation */}
+          <div className="mx-auto h-px w-full max-w-3xl bg-gradient-to-r from-transparent via-zinc-700/60 to-transparent mb-10" />
           {/* Responsive Search Bar */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-10 justify-center reveal relative z-10">
             <input
               type="text"
               placeholder="Search by title or genre..."
@@ -284,11 +295,14 @@ const Store = () => {
               setBpmExact={setBpmExact}
             />
           </div>
+          {/* Removed vibe + sorting bar */}
           {/* Responsive Beats Grid */}
           <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
             {filteredBeats.length > 0 ? (
               filteredBeats.map((beat) => (
-                <BeatCard key={beat.id} beat={beat} />
+                <div key={beat.id} className="reveal">
+                  <BeatCard beat={beat} />
+                </div>
               ))
             ) : (
               <div className="col-span-full text-center text-zinc-400">

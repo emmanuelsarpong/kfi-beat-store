@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Play, Pause, ShoppingCart } from "lucide-react";
+import { Play, Pause, ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePlayer } from "@/hooks/usePlayer";
+import { useFavorites } from "@/hooks/useFavorites";
 
 interface Beat {
   id: string;
@@ -22,6 +23,7 @@ interface BeatCardProps {
 
 const BeatCard = ({ beat }: BeatCardProps) => {
   const { current, isPlaying, playTrack, toggle } = usePlayer();
+  const { isFavorite, toggle: toggleFav } = useFavorites();
   const [hovering, setHovering] = useState(false);
   const previewRef = useRef<HTMLAudioElement>(null);
   const isCurrent = current?.audioUrl === beat.audioUrl;
@@ -99,6 +101,8 @@ const BeatCard = ({ beat }: BeatCardProps) => {
       });
   };
 
+  const favActive = isFavorite(beat.id);
+
   return (
     <Card
       className="group glass-card relative overflow-hidden rounded-xl bg-black/70 backdrop-blur-md border border-white/5 transition-all duration-300 ease-out transform-gpu hover:-translate-y-1.5 hover:shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_0_44px_rgba(168,142,255,0.22)]"
@@ -113,13 +117,51 @@ const BeatCard = ({ beat }: BeatCardProps) => {
         aria-hidden="true"
       />
       <CardContent className="p-0">
-        <div className="relative overflow-hidden rounded-t-xl">
-          <img
-            src={beat.coverImage}
-            alt={beat.title}
-            loading="lazy"
-            className="w-full h-44 sm:h-48 object-cover transition-transform duration-300 ease-in-out md:group-hover:scale-[1.03] group-hover:scale-[1.02]"
-          />
+        <div className="relative overflow-hidden rounded-t-xl group/cover">
+          {/* Gradient cover (replaces image) */}
+          {(() => {
+            // Deterministic gradient pick based on id numeric fallback to hash.
+            const num = parseInt(beat.id, 10);
+            const paletteCount = 20; // defined in index.css
+            const idx = isNaN(num)
+              ? Math.abs(
+                  Array.from(beat.id).reduce((a, c) => a + c.charCodeAt(0), 0)
+                ) % paletteCount
+              : (num - 1) % paletteCount;
+            const gradClass = `grad-beat-${idx + 1}`;
+            return (
+              <div
+                role="img"
+                aria-label={`${beat.title} cover artwork (abstract gradient)`}
+                className={`grad-beat-base ${gradClass}`}
+              />
+            );
+          })()}
+          {/* Favorite button */}
+          <button
+            type="button"
+            aria-label={
+              favActive ? "Remove from favorites" : "Add to favorites"
+            }
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFav({
+                id: beat.id,
+                title: beat.title,
+                coverImage: beat.coverImage, // still stored for potential future use
+                genre: beat.genre,
+                bpm: beat.bpm,
+              });
+            }}
+            className={`fav-btn ${favActive ? "is-fav" : ""}`}
+          >
+            <Heart
+              className={`h-5 w-5 heart-pop ${
+                favActive ? "fill-white drop-shadow" : ""
+              }`}
+              strokeWidth={1.8}
+            />
+          </button>
           {/* top->bottom faint darkening for text clarity */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           {/* Play overlay */}
@@ -160,7 +202,7 @@ const BeatCard = ({ beat }: BeatCardProps) => {
                 {/* Genre neon pill */}
                 <button
                   type="button"
-                  className={`neon-pill ${genreClass}`}
+                  className={`neon-pill pill-anim pill-enter pill-delay-1 ${genreClass}`}
                   aria-label={`Filter by ${beat.genre}`}
                 >
                   {beat.genre}
@@ -168,7 +210,7 @@ const BeatCard = ({ beat }: BeatCardProps) => {
                 {/* BPM pill */}
                 <button
                   type="button"
-                  className="neon-pill np-cyan"
+                  className="neon-pill pill-anim pill-enter pill-delay-2 np-cyan"
                   aria-label={`Filter by ${beat.bpm} BPM`}
                 >
                   {beat.bpm} BPM
@@ -176,7 +218,7 @@ const BeatCard = ({ beat }: BeatCardProps) => {
                 {/* Mood pill */}
                 <button
                   type="button"
-                  className="neon-pill np-purple"
+                  className="neon-pill pill-anim pill-enter pill-delay-3 np-purple"
                   aria-label={`Filter by ${beat.mood}`}
                 >
                   {beat.mood}

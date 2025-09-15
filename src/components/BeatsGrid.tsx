@@ -86,20 +86,20 @@ const BeatsGrid = () => {
   return (
     <section id="beats" className="py-16 px-4 scroll-mt-24">
       <div className="container mx-auto max-w-7xl p-0 md:px-4">
-        <h3 className="text-3xl font-bold text-center mb-8">
-          Latest{" "}
-          <span className="bg-gradient-to-r from-zinc-300 via-zinc-400 to-zinc-200 bg-clip-text text-transparent font-semibold">
-            Beats
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 tracking-tight">
+          <span className="bg-gradient-to-r from-zinc-200 via-white to-zinc-300 bg-clip-text text-transparent">
+            🔥 Premium Catalog
           </span>
-        </h3>
+        </h2>
+        <p className="text-center text-sm md:text-base text-zinc-400 max-w-2xl mx-auto mb-10">
+          Handcrafted sonic landscapes engineered for replay value. Browse,
+          preview & build your next record faster.
+        </p>
 
-        {/* Mobile carousel feel via snap */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 md:gap-12 [--cols:1] md:[--cols:3] md:overflow-visible overflow-x-auto snap-x snap-mandatory md:snap-none pb-2">
+        {/* Restored simple responsive grid (6 cards) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 md:gap-10">
           {beats.map((beat) => (
-            <div
-              key={beat.id}
-              className="snap-center md:snap-none min-w-[85%] xs:min-w-[65%] sm:min-w-0"
-            >
+            <div key={beat.id} className="reveal">
               <BeatCard beat={beat} />
             </div>
           ))}

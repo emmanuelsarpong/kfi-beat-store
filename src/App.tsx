@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import MiniPlayer from "./components/MiniPlayer";
 import { PlayerProvider } from "@/hooks/PlayerProvider";
 import CookieBanner from "./components/CookieBanner";
+import { FavoritesProvider } from "@/hooks/useFavorites";
 
 const queryClient = new QueryClient();
 
@@ -27,8 +28,10 @@ const RouteFade: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   );
 };
 
-// Observe `.reveal` elements and add `.is-visible` when they enter the viewport
+// Observe `.reveal` elements and add `.is-visible` when they enter the viewport.
+// Updated to re-run on route changes so newly navigated pages reveal content.
 const RevealManager: React.FC = () => {
+  const location = useLocation();
   React.useEffect(() => {
     const showAll = () => {
       document.querySelectorAll<HTMLElement>(".reveal").forEach((el) => {
@@ -69,7 +72,7 @@ const RevealManager: React.FC = () => {
     // Fallback for older environments
     showAll();
     return;
-  }, []);
+  }, [location.pathname]);
   return null;
 };
 
@@ -77,21 +80,23 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <PlayerProvider>
-        <Toaster />
-        <Sonner />
-        <Router>
-          <RouteFade>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/store" element={<Store />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </RouteFade>
-          {/* Mobile bottom nav removed for responsive website design */}
-        </Router>
-        <RevealManager />
-        <CookieBanner />
+        <FavoritesProvider>
+          <Toaster />
+          <Sonner />
+          <Router>
+            <RouteFade>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/store" element={<Store />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </RouteFade>
+            <RevealManager />
+            {/* Mobile bottom nav removed for responsive website design */}
+          </Router>
+          <CookieBanner />
+        </FavoritesProvider>
       </PlayerProvider>
     </TooltipProvider>
   </QueryClientProvider>

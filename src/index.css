@@ -739,3 +739,303 @@
     animation: none;
   }
 }
+
+/* ================= Additional Microinteraction Utilities ================= */
+/* Pill entrance animation (fade + slide up) */
+@keyframes pill-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.015);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.pill-enter {
+  animation: pill-in 600ms cubic-bezier(0.34, 1.3, 0.3, 1) forwards;
+  opacity: 0;
+}
+/* Stagger helpers */
+.pill-delay-1 {
+  animation-delay: 60ms;
+}
+.pill-delay-2 {
+  animation-delay: 120ms;
+}
+.pill-delay-3 {
+  animation-delay: 180ms;
+}
+.pill-delay-4 {
+  animation-delay: 240ms;
+}
+.pill-delay-5 {
+  animation-delay: 300ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pill-enter {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Neon pill subtle shine + press feedback */
+.pill-anim {
+  position: relative;
+  overflow: hidden;
+  transition: transform 180ms ease, background 320ms ease, box-shadow 320ms ease;
+}
+.pill-anim::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0)
+  );
+  opacity: 0;
+  transition: opacity 320ms ease;
+  pointer-events: none;
+}
+.pill-anim:hover::before {
+  opacity: 1;
+}
+.pill-anim:active {
+  transform: scale(0.95);
+}
+
+/* Favorite heart button (floating control) */
+.fav-btn {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  transition: color 220ms ease, transform 220ms ease, background 260ms ease,
+    box-shadow 260ms ease;
+}
+.fav-btn:hover {
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 4px 18px -4px rgba(0, 0, 0, 0.6), 0 0 18px -2px rgba(236, 72, 153, 0.4);
+}
+.fav-btn:active {
+  transform: scale(0.9);
+}
+.fav-btn.is-fav {
+  color: #fff;
+  background: linear-gradient(
+    145deg,
+    rgba(236, 72, 153, 0.35),
+    rgba(249, 115, 22, 0.28),
+    rgba(251, 191, 36, 0.25)
+  );
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15),
+    0 0 28px -4px rgba(236, 72, 153, 0.55), 0 8px 40px -12px rgba(0, 0, 0, 0.9);
+}
+
+/* Heart pulse animation when toggled */
+@keyframes fav-pop {
+  0% {
+    transform: scale(0.6) rotate(-12deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15) rotate(4deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+.fav-btn.is-fav .heart-pop {
+  animation: fav-pop 420ms cubic-bezier(0.34, 1.56, 0.4, 1) forwards;
+  transform-origin: center;
+}
+
+/* Parallax tilt utility (applied via JS or simple hover) */
+.parallax-tilt {
+  transform-style: preserve-3d;
+  perspective: 1200px;
+}
+.parallax-child {
+  transform: translateZ(40px);
+}
+
+/* Mini waveform (BeatCard corner) */
+.kfi-mini-wave {
+  display: inline-flex;
+  gap: 2px;
+}
+.kfi-mini-wave span {
+  display: block;
+  width: 3px;
+  height: 14px;
+  background: linear-gradient(
+    to top,
+    rgba(236, 72, 153, 0.9),
+    rgba(59, 130, 246, 0.5)
+  );
+  border-radius: 2px;
+  animation: mini-wave 1s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 0.1s);
+}
+.kfi-mini-wave span:nth-child(1) {
+  --i: 0;
+}
+.kfi-mini-wave span:nth-child(2) {
+  --i: 1;
+}
+.kfi-mini-wave span:nth-child(3) {
+  --i: 2;
+}
+.kfi-mini-wave span:nth-child(4) {
+  --i: 3;
+}
+.kfi-mini-wave span:nth-child(5) {
+  --i: 4;
+}
+@keyframes mini-wave {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* ================= Modern Gradient Cover Utilities ================= */
+/* Each gradient designed for high contrast text overlays + subtle depth. */
+.grad-beat-base {
+  position: relative;
+  width: 100%;
+  height: 11rem; /* ~h-44 */
+  background: radial-gradient(
+      circle at 30% 20%,
+      rgba(255, 255, 255, 0.12),
+      transparent 55%
+    ),
+    linear-gradient(145deg, #0f0f11, #121214); /* fallback layer */
+  overflow: hidden;
+}
+.grad-beat-base::after,
+.grad-beat-base::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* noise overlay */
+.grad-beat-base::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.65' stitchTiles='stitch' type='fractalNoise'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.18'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  opacity: 0.35;
+}
+.grad-beat-base::before {
+  background: radial-gradient(
+    circle at 70% 85%,
+    rgba(255, 255, 255, 0.18),
+    rgba(255, 255, 255, 0) 70%
+  );
+  opacity: 0.35;
+}
+
+/* Palette variations */
+.grad-beat-1 {
+  background: linear-gradient(
+    140deg,
+    #ffb56b,
+    #fca271,
+    #f68080,
+    #cd8bd3,
+    #8484e8,
+    #5fa9ee
+  );
+}
+.grad-beat-2 {
+  background: linear-gradient(125deg, #0f2027, #203a43, #2c5364);
+}
+.grad-beat-3 {
+  background: linear-gradient(135deg, #141e30, #243b55);
+}
+.grad-beat-4 {
+  background: linear-gradient(135deg, #42275a, #734b6d);
+}
+.grad-beat-5 {
+  background: linear-gradient(135deg, #3a1c71, #d76d77, #ffaf7b);
+}
+.grad-beat-6 {
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+}
+.grad-beat-7 {
+  background: linear-gradient(135deg, #232526, #414345);
+}
+.grad-beat-8 {
+  background: linear-gradient(135deg, #16222a, #3a6073);
+}
+.grad-beat-9 {
+  background: linear-gradient(135deg, #355c7d, #6c5b7b, #c06c84);
+}
+.grad-beat-10 {
+  background: linear-gradient(135deg, #1f1c2c, #928dab);
+}
+.grad-beat-11 {
+  background: linear-gradient(135deg, #141e30, #2a3353, #6d58a5);
+}
+.grad-beat-12 {
+  background: linear-gradient(135deg, #2b5876, #4e4376);
+}
+.grad-beat-13 {
+  background: linear-gradient(135deg, #42275a, #734b6d, #c85f7f);
+}
+.grad-beat-14 {
+  background: linear-gradient(135deg, #2c3e50, #4ca1af);
+}
+.grad-beat-15 {
+  background: linear-gradient(135deg, #000428, #004e92);
+}
+.grad-beat-16 {
+  background: linear-gradient(135deg, #134e5e, #71b280);
+}
+.grad-beat-17 {
+  background: linear-gradient(135deg, #283c86, #45a247);
+}
+.grad-beat-18 {
+  background: linear-gradient(135deg, #41295a, #2f0743);
+}
+.grad-beat-19 {
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+}
+.grad-beat-20 {
+  background: linear-gradient(135deg, #16222a, #46b2d6, #2f80ed);
+}
+
+/* Soft hover scale similar to image variant */
+.grad-beat-base {
+  transition: transform 600ms cubic-bezier(0.4, 0.12, 0.2, 1);
+}
+.group:hover .grad-beat-base {
+  transform: scale(1.04);
+}
+
+/* Darkening overlay reused from image path (we keep same markup overlay). */

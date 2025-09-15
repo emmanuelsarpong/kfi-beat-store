@@ -17,15 +17,12 @@ const Footer = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-8 md:gap-6 py-8 md:py-10">
             {/* Brand + tagline */}
             <div className="md:col-span-3 flex flex-col gap-4 items-center md:items-start text-center md:text-left">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center">
                 <img
                   src={kfiLogo}
                   alt="KFI Logo"
                   className="h-8 w-auto object-contain drop-shadow-[0_0_6px_rgba(255,255,255,0.12)]"
                 />
-                <span className="text-sm font-medium tracking-wide bg-gradient-to-r from-zinc-200 via-white to-zinc-300 bg-clip-text text-transparent">
-                  KFI
-                </span>
               </div>
               <p className="text-xs leading-relaxed max-w-[240px] text-zinc-400/80">
                 Premium, future-forward sound beds crafted for artists &
