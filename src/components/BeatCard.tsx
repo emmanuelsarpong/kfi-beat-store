@@ -199,25 +199,15 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
               <h3 className="font-semibold text-white text-xl tracking-tight">
                 {beat.title}
               </h3>
-              {/* Highlight badges (demo-driven until data supports it) */}
+              {/* Badge: New (Top Seller removed) */}
               {(() => {
-                const topSeller = ["Midnight Drive", "Neon Dreams"].includes(
-                  beat.title
-                );
                 const isNew = ["Afterglow", "Deep Space"].includes(beat.title);
-                if (!topSeller && !isNew) return null;
+                if (!isNew) return null;
                 return (
                   <div className="mt-2 flex items-center gap-2">
-                    {topSeller && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/30">
-                        Top Seller
-                      </span>
-                    )}
-                    {isNew && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
-                        New
-                      </span>
-                    )}
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
+                      New
+                    </span>
                   </div>
                 );
               })()}
