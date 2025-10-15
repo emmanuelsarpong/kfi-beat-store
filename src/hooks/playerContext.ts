@@ -16,6 +16,7 @@ export type PlayerContextType = {
   play: () => void;
   pause: () => void;
   toggle: () => void;
+  playRandom: () => void;
   setVolume: (v: number) => void;
   seek: (t: number) => void;
   playTrack: (t: Track) => void;

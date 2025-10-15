@@ -1,6 +1,13 @@
 import React from "react";
 import { usePlayer } from "@/hooks/usePlayer";
-import { Play, Pause, Volume2, SkipBack, SkipForward } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Volume2,
+  SkipBack,
+  SkipForward,
+  Shuffle,
+} from "lucide-react";
 
 const format = (s: number) => {
   if (!isFinite(s)) return "0:00";
@@ -22,6 +29,7 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ mode = "floating" }) => {
     currentTime,
     duration,
     toggle,
+    playRandom,
     seek,
     volume,
     setVolume,
@@ -108,6 +116,14 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ mode = "floating" }) => {
         <div className="col-span-1 flex items-center justify-between mt-0.5">
           <div className="flex items-center gap-2">
             <button
+              onClick={playRandom}
+              className="w-8 h-8 rounded-full bg-white/5 text-white flex items-center justify-center hover:bg-white/15 border border-white/10"
+              aria-label="Shuffle Play"
+              title="Shuffle Play"
+            >
+              <Shuffle className="w-3.5 h-3.5" />
+            </button>
+            <button
               onClick={() => jump(-10)}
               className="w-8 h-8 rounded-full bg-white/5 text-white flex items-center justify-center hover:bg-white/15 border border-white/10"
               aria-label="Rewind 10 seconds"
@@ -116,7 +132,7 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ mode = "floating" }) => {
               <SkipBack className="w-3.5 h-3.5" />
             </button>
             <button
-              onClick={toggle}
+              onClick={() => (current ? toggle() : playRandom())}
               className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform shadow-md"
               aria-label={isPlaying ? "Pause" : "Play"}
             >
@@ -127,10 +143,10 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ mode = "floating" }) => {
               )}
             </button>
             <button
-              onClick={() => jump(10)}
+              onClick={playRandom}
               className="w-8 h-8 rounded-full bg-white/5 text-white flex items-center justify-center hover:bg-white/15 border border-white/10"
-              aria-label="Forward 10 seconds"
-              title="Forward 10s"
+              aria-label="Next (Random)"
+              title="Next (Random)"
             >
               <SkipForward className="w-3.5 h-3.5" />
             </button>

@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useFavorites } from "@/hooks/useFavorites";
+import { startCheckout } from "@/lib/checkout";
+import { getPlayableUrlForBeat } from "@/lib/audio";
 
 interface Beat {
   id: string;
@@ -11,6 +13,7 @@ interface Beat {
   genre: string;
   bpm: number;
   mood: string;
+  key?: string;
   price: number;
   audioUrl: string;
   coverImage?: string;
@@ -26,7 +29,8 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
   const { isFavorite, toggle: toggleFav } = useFavorites();
   const [hovering, setHovering] = useState(false);
   const previewRef = useRef<HTMLAudioElement>(null);
-  const isCurrent = current?.audioUrl === beat.audioUrl;
+  // Use stable id comparison instead of audioUrl (which may be a resolved/signed URL)
+  const isCurrent = current?.id === beat.id;
 
   // Neon color class mapping by genre (fallback slate)
   const genreClassMap: Record<string, string> = {
@@ -39,19 +43,26 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
   };
   const genreClass = genreClassMap[beat.genre] || "np-slate nc-slate";
 
-  const handlePurchase = () => {
-    if (beat.paymentLink) {
-      window.open(beat.paymentLink, "_blank");
-    } else {
-      alert("Purchase link not available yet.");
+  const handlePurchase = async () => {
+    // Prefer server-driven checkout if configured, else fallback to paymentLink
+    try {
+      if (import.meta.env.VITE_SERVER_URL) {
+        await startCheckout(beat.id);
+        return;
+      }
+      if (beat.paymentLink) {
+        window.open(beat.paymentLink, "_blank");
+      } else {
+        alert("Purchase link not available yet.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Checkout failed. Please try again later.");
     }
   };
 
-  // Stripe payment link for "Midnight Drive"
-  const paymentLink =
-    beat.title === "Midnight Drive"
-      ? "https://buy.stripe.com/test_28E14g7W4gyR5BudbQ6AM00"
-      : beat.paymentLink;
+  // Use paymentLink from data; component stays data-driven
+  const paymentLink = beat.paymentLink;
 
   // hover preview: play up to 5s with fade in/out
   useEffect(() => {
@@ -91,13 +102,22 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
   }, [hovering, isCurrent]);
 
   const handlePlayClick = () => {
-    if (isCurrent) toggle();
-    else
-      playTrack({
-        id: beat.id,
-        title: beat.title,
-        audioUrl: beat.audioUrl,
-        coverImage: beat.coverImage,
+    if (isCurrent) {
+      toggle();
+      return;
+    }
+    // Resolve a playable URL dynamically (server preview, public, or signed)
+    getPlayableUrlForBeat(beat)
+      .then((url) =>
+        playTrack({
+          id: beat.id,
+          title: beat.title,
+          audioUrl: url,
+          coverImage: beat.coverImage,
+        })
+      )
+      .catch((e) => {
+        console.error("[player] failed to resolve playable URL", e);
       });
   };
 
@@ -143,7 +163,6 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
             aria-label={
               favActive ? "Remove from favorites" : "Add to favorites"
             }
-            aria-pressed={favActive ? "true" : "false"}
             onClick={(e) => {
               e.stopPropagation();
               toggleFav({
@@ -236,6 +255,15 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
                 >
                   {beat.mood}
                 </button>
+                {beat.key && (
+                  <button
+                    type="button"
+                    className="neon-pill pill-anim pill-enter pill-delay-4 np-emerald"
+                    aria-label={`Filter by key ${beat.key}`}
+                  >
+                    {beat.key}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -249,17 +277,11 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
                 <div className="pointer-events-none absolute -inset-4 md:-inset-5 rounded-2xl bg-gradient-to-r from-rose-500/25 via-orange-500/25 to-amber-400/25 blur-xl opacity-30 group-hover:opacity-40 transition-opacity animate-cta-pulse" />
                 {/* Button matches hero CTA classes exactly */}
                 <Button
-                  asChild
+                  onClick={handlePurchase}
                   className="relative z-20 px-8 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-black via-zinc-900 to-zinc-800 hover:from-zinc-900 hover:via-zinc-800 hover:to-zinc-700 btn-dark-glow hover:scale-105 btn-ripple ring-1 ring-white/10 focus-visible:ring-2 focus-visible:ring-amber-400/50 group/button transition-transform duration-200 ease-out"
                 >
-                  <a
-                    href={paymentLink || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ShoppingCart className="h-4 w-4 mr-2 cart-nudge transition-transform duration-200 ease-out group-hover/button:-translate-y-0.5" />
-                    Buy Now
-                  </a>
+                  <ShoppingCart className="h-4 w-4 mr-2 cart-nudge transition-transform duration-200 ease-out group-hover/button:-translate-y-0.5" />
+                  Buy Now
                 </Button>
               </div>
             </div>

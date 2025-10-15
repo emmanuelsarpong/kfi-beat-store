@@ -13,7 +13,11 @@ import { Suspense, lazy } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 const Index = lazy(() => import("./pages/Index"));
 const Store = lazy(() => import("./pages/store"));
+const Download = lazy(() => import("./pages/Download"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Licensing = lazy(() => import("./pages/Licensing"));
 import MiniPlayer from "./components/MiniPlayer";
 import { PlayerProvider } from "@/hooks/PlayerProvider";
 import CookieBanner from "./components/CookieBanner";
@@ -103,6 +107,10 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/store" element={<Store />} />
+                  <Route path="/download" element={<Download />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/licensing" element={<Licensing />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

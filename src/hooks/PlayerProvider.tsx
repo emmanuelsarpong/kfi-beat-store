@@ -6,6 +6,7 @@ import React, {
   useState,
 } from "react";
 import { PlayerContext, PlayerContextType, Track } from "./playerContext";
+import { allSongs } from "@/data/allSongs";
 
 export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -16,10 +17,13 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolumeState] = useState(1);
+  const playRandomRef = useRef<(() => void) | null>(null);
 
   if (!audioRef.current && typeof Audio !== "undefined") {
     audioRef.current = new Audio();
     audioRef.current.preload = "metadata";
+    // Helps when streaming from other origins during dev
+    audioRef.current.crossOrigin = "anonymous";
   }
 
   useEffect(() => {
@@ -29,18 +33,32 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
     const onTime = () => setCurrentTime(audio.currentTime || 0);
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
-    const onEnded = () => setIsPlaying(false);
+    const onEnded = () => {
+      setIsPlaying(false);
+      // Auto-advance to a random next song when a track ends
+      if (playRandomRef.current) playRandomRef.current();
+    };
+    const onError = () => {
+      // Surface errors in dev console; keeps UI from silently failing
+      const err =
+        (audio.error && audio.error.message) || "Audio playback error";
+      console.error("[player]", err, { src: audio.src });
+      setIsPlaying(false);
+    };
+
     audio.addEventListener("loadedmetadata", onLoaded);
     audio.addEventListener("timeupdate", onTime);
     audio.addEventListener("play", onPlay);
     audio.addEventListener("pause", onPause);
     audio.addEventListener("ended", onEnded);
+    audio.addEventListener("error", onError);
     return () => {
       audio.removeEventListener("loadedmetadata", onLoaded);
       audio.removeEventListener("timeupdate", onTime);
       audio.removeEventListener("play", onPlay);
       audio.removeEventListener("pause", onPause);
       audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("error", onError);
     };
   }, []);
 
@@ -49,7 +67,14 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [volume]);
 
   const play = useCallback(() => {
-    if (audioRef.current && current) audioRef.current.play();
+    if (audioRef.current && current) {
+      const p = audioRef.current.play();
+      if (p && typeof p.catch === "function") {
+        p.catch((e) => {
+          console.warn("[player] play() blocked or failed", e);
+        });
+      }
+    }
   }, [current]);
   const pause = useCallback(() => {
     audioRef.current?.pause();
@@ -73,14 +98,32 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
     (t: Track) => {
       const audio = audioRef.current!;
       if (!audio) return;
-      if (!current || current.audioUrl !== t.audioUrl) {
+      // If it's a different track id or the URL changed (e.g., new signed URL), update the src
+      if (!current || current.id !== t.id || current.audioUrl !== t.audioUrl) {
         audio.src = t.audioUrl;
         setCurrent(t);
       }
-      audio.play();
+      const p = audio.play();
+      if (p && typeof p.catch === "function") {
+        p.catch((e) => {
+          console.warn("[player] playTrack() failed", e, { src: t.audioUrl });
+        });
+      }
     },
     [current]
   );
+
+  const playRandom = useCallback(() => {
+    if (!allSongs.length) return;
+    const idx = Math.floor(Math.random() * allSongs.length);
+    const song = allSongs[idx];
+    playTrack({ id: song.id, title: song.title, audioUrl: song.audioUrl });
+  }, [playTrack]);
+
+  // Keep a stable reference to playRandom for event listeners
+  useEffect(() => {
+    playRandomRef.current = playRandom;
+  }, [playRandom]);
 
   const value: PlayerContextType = useMemo(
     () => ({
@@ -92,6 +135,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
       play,
       pause,
       toggle,
+      playRandom,
       setVolume,
       seek,
       playTrack,
@@ -105,6 +149,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
       play,
       pause,
       toggle,
+      playRandom,
       setVolume,
       seek,
       playTrack,
