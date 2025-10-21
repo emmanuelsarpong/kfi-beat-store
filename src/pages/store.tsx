@@ -3,6 +3,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BeatCard from "@/components/BeatCard";
 import BPMFilter from "@/components/BPMFilter";
+import KeyFilter from "@/components/KeyFilter";
+import { keyMatches, type KeyFilterValue } from "@/lib/keys";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useBeats } from "@/hooks/useBeats";
 
@@ -26,6 +28,10 @@ const Store = () => {
   const [genre, setGenre] = useState("");
   const [bpmRange, setBpmRange] = useState<[number, number]>([1, 300]);
   const [bpmExact, setBpmExact] = useState<number | "">("");
+  const [keyFilter, setKeyFilter] = useState<KeyFilterValue>({
+    note: null,
+    quality: null,
+  });
   // Removed sortMode & vibe UI/state per design request
   const uniqueGenres = useMemo(
     () => (beats ? [...new Set(beats.map((b) => b.genre))] : []),
@@ -42,9 +48,10 @@ const Store = () => {
         bpmExact !== ""
           ? beat.bpm === Number(bpmExact)
           : beat.bpm >= bpmRange[0] && beat.bpm <= bpmRange[1];
-      return matchesSearch && matchesGenre && matchesBpm;
+      const matchesKey = keyMatches(keyFilter, beat.key);
+      return matchesSearch && matchesGenre && matchesBpm && matchesKey;
     });
-  }, [beats, search, genre, bpmRange, bpmExact]);
+  }, [beats, search, genre, bpmRange, bpmExact, keyFilter]);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
@@ -85,6 +92,7 @@ const Store = () => {
                 </option>
               ))}
             </select>
+            <KeyFilter value={keyFilter} onChange={setKeyFilter} />
             <BPMFilter
               bpmRange={bpmRange}
               setBpmRange={setBpmRange}

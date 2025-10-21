@@ -22,6 +22,7 @@ import MiniPlayer from "./components/MiniPlayer";
 import { PlayerProvider } from "@/hooks/PlayerProvider";
 import CookieBanner from "./components/CookieBanner";
 import { FavoritesProvider } from "@/hooks/useFavorites";
+import ScrollToHash from "@/components/ScrollToHash";
 
 const queryClient = new QueryClient();
 
@@ -116,6 +117,7 @@ const App = () => (
                 </Routes>
               </RouteFade>
             </Suspense>
+            <ScrollToHash />
             <RevealManager />
             {/* Mobile bottom nav removed for responsive website design */}
           </Router>

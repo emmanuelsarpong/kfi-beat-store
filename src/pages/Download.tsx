@@ -8,6 +8,10 @@ export default function Download() {
   const [files, setFiles] = React.useState<DownloadFile[]>([]);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [folder, setFolder] = React.useState<string>("");
+  const [email, setEmail] = React.useState<string>("");
+  const [sending, setSending] = React.useState<boolean>(false);
+  const [sentMsg, setSentMsg] = React.useState<string>("");
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -33,6 +37,7 @@ export default function Download() {
           ? (data.files as DownloadFile[])
           : [];
         setFiles(arr.map((f) => ({ name: f.name, url: f.url })));
+        if (typeof data?.beat === "string") setFolder(data.beat);
       })
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
@@ -70,6 +75,55 @@ export default function Download() {
           </li>
         ))}
       </ul>
+
+      {/* Resend email helper */}
+      <div className="mt-8 border-t border-white/10 pt-6">
+        <h2 className="font-semibold mb-2">Didn’t get the email?</h2>
+        <p className="text-sm text-zinc-400 mb-3">
+          Enter your email and we’ll send these links to your inbox.
+        </p>
+        <div className="flex gap-2 max-w-xl">
+          <input
+            type="email"
+            placeholder="you@example.com"
+            className="flex-1 bg-white/5 border border-white/10 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-amber-300"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <button
+            disabled={sending || !email || !folder}
+            onClick={async () => {
+              if (!serverUrl) return;
+              setSending(true);
+              setSentMsg("");
+              try {
+                const res = await fetch(
+                  `${serverUrl}/api/email/test-download`,
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ to: email, folder }),
+                  }
+                );
+                const data = await res.json().catch(() => ({}));
+                if (res.ok)
+                  setSentMsg(
+                    "Email sent. Please check your Inbox and Spam/Promotions."
+                  );
+                else setSentMsg(data?.error || "Failed to send email.");
+              } catch (e) {
+                setSentMsg(String(e));
+              } finally {
+                setSending(false);
+              }
+            }}
+            className="bg-amber-300 text-black font-medium px-4 py-2 rounded-md disabled:opacity-50"
+          >
+            {sending ? "Sending…" : "Email me these links"}
+          </button>
+        </div>
+        {sentMsg && <p className="text-sm mt-2 text-zinc-300">{sentMsg}</p>}
+      </div>
     </div>
   );
 }

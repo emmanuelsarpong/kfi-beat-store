@@ -57,6 +57,11 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
       }
     } catch (err) {
       console.error(err);
+      // Graceful fallback: if server checkout fails but a payment link exists, use it
+      if (beat.paymentLink) {
+        window.open(beat.paymentLink, "_blank");
+        return;
+      }
       alert("Checkout failed. Please try again later.");
     }
   };
@@ -269,7 +274,7 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
 
             <div className="flex items-center justify-between">
               <span className="text-2xl font-bold text-white relative kfi-price-underline">
-                ${beat.price}
+                ${beat.price.toFixed(2)}
               </span>
               {/* Stripe Buy Button for "Midnight Drive" */}
               <div className="relative card-buy-zone group">

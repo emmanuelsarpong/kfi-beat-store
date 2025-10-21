@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Mail, Send } from "lucide-react";
 import axios from "axios";
 
-const FORMSPREE_ENDPOINT = "https://formspree.io/f/xyzjpvyw";
+const serverUrl = import.meta.env.VITE_SERVER_URL as string | undefined;
 
 const ContactForm = () => {
   const [formData, setFormData] = useState({
@@ -22,14 +22,16 @@ const ContactForm = () => {
     e.preventDefault();
     setStatus("loading");
     try {
-      const data = new FormData();
-      data.append("name", formData.name);
-      data.append("email", formData.email);
-      data.append("message", formData.message);
-
-      await axios.post(FORMSPREE_ENDPOINT, data, {
-        headers: { Accept: "application/json" },
-      });
+      if (!serverUrl) throw new Error("Server not configured");
+      await axios.post(
+        `${serverUrl.replace(/\/$/, "")}/api/contact`,
+        {
+          name: formData.name,
+          email: formData.email,
+          message: formData.message,
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
 
       setStatus("success");
       setFormData({ name: "", email: "", message: "" });
@@ -158,10 +160,10 @@ const ContactForm = () => {
           <p className="text-gray-400 mb-4">Prefer direct contact?</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <a
-              href="mailto:contact@kfi.com"
+              href="mailto:info.kfimusic@gmail.com"
               className="text-white hover:text-gray-300 transition-colors font-medium"
             >
-              contact@kfi.com
+              info.kfimusic@gmail.com
             </a>
             <a
               href="https://instagram.com/thisiskfi"

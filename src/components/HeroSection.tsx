@@ -65,7 +65,7 @@ const HeroSection = () => {
       <div className="pointer-events-none absolute bottom-0 w-full h-24 bg-gradient-to-b from-transparent to-black z-20" />
       <div className="relative z-30 flex flex-col items-center w-full">
         <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-4 text-center">
-          Premium beats for the modern sound
+          Premium exclusive beats for the modern sound
         </h1>
         <div className="flex-1" />
         {/* CTA with subtle aura and synced waves behind */}

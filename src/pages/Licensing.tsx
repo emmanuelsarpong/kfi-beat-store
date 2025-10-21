@@ -7,29 +7,22 @@ const Licensing: React.FC = () => {
   return (
     <Modal title="Licensing" onClose={() => nav(-1)}>
       <p>
-        Our licensing is designed to be clear and flexible, covering common use
-        cases from personal projects to commercial releases. Choose the license
-        that fits your needs; if you require a custom license, reach out to us.
+        We sell <span className="font-semibold text-white">exclusive</span>{" "}
+        licenses only. Each beat is sold once as a full buyout and is
+        permanently removed from the store after purchase. If you need to place
+        a temporary hold or have questions before buying, get in touch via the
+        contact form below.
       </p>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">License Types</h3>
+      <h3 className="mt-6 mb-2 text-white font-semibold">License Type</h3>
       <ul className="list-disc pl-6 space-y-1">
         <li>
-          <span className="font-medium text-white">Basic:</span> Non-exclusive
-          license for social content and personal projects. Credit appreciated.
-        </li>
-        <li>
-          <span className="font-medium text-white">Standard:</span>{" "}
-          Non-exclusive license for streaming releases and monetized content, up
-          to a defined cap of streams/views.
-        </li>
-        <li>
-          <span className="font-medium text-white">Premium:</span> Extended
-          terms for wider commercial exploitation, broadcast, and higher caps.
-        </li>
-        <li>
-          <span className="font-medium text-white">Exclusive:</span> Full
-          buyout. Beat is removed from the store after purchase.
+          <span className="font-medium text-white">
+            Exclusive (Full Buyout):
+          </span>{" "}
+          Unlimited commercial usage across streaming, downloads, live
+          performances, broadcast, and sync. One purchaser only; the beat is
+          removed from the catalog at checkout.
         </li>
       </ul>
 
@@ -48,22 +41,22 @@ const Licensing: React.FC = () => {
         Stems & Deliverables
       </h3>
       <p>
-        Depending on the license, you may receive master WAV, MP3, and
-        multitrack stems via secure download links after purchase. Keep your
-        links private.
+        You will receive master WAV, MP3, and multitrack stems via secure
+        download links after purchase. Keep your links private.
       </p>
 
       <h3 className="mt-6 mb-2 text-white font-semibold">Attribution</h3>
       <p>
-        Credit “KFI” where practical. For commercial releases, contact us for a
-        preferred credit line and publishing splits if applicable.
+        Credit “KFI” is appreciated but not required. For label releases,
+        contact us if you need a preferred credit line or publishing split
+        details.
       </p>
 
       <h3 className="mt-6 mb-2 text-white font-semibold">Support</h3>
       <p>
-        Questions about license scope or upgrades? Email
-        <a href="mailto:licensing@kfi.io" className="underline ml-1">
-          licensing@kfi.io
+        Questions, holds, or bespoke terms?
+        <a href="/#contact" className="underline ml-1">
+          Contact us
         </a>
         .
       </p>

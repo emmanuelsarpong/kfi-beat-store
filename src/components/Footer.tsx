@@ -40,8 +40,11 @@ const Footer = () => {
                   Instagram
                 </a>
                 <span className="text-zinc-600">/</span>
-                <a href="mailto:collab@kfi.io" className="footer-link subtle">
-                  collab@kfi.io
+                <a
+                  href="mailto:info.kfimusic@gmail.com"
+                  className="footer-link subtle"
+                >
+                  info.kfimusic@gmail.com
                 </a>
               </div>
             </div>
@@ -56,7 +59,7 @@ const Footer = () => {
                 <a href="/store" className="footer-link">
                   🎧 Browse Store
                 </a>
-                <a href="#contact" className="footer-link">
+                <a href="/#contact" className="footer-link">
                   ✉️ Contact
                 </a>
               </div>
