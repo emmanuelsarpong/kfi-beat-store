@@ -83,7 +83,12 @@ const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const SMTP_FROM = process.env.SMTP_FROM || "KFI Music <no-reply@example.com>";
-const CONTACT_RECIPIENT = process.env.CONTACT_RECIPIENT || SMTP_USER;
+// Default contact recipient explicitly set to KFI inbox unless overridden by env
+const CONTACT_RECIPIENT =
+  process.env.CONTACT_RECIPIENT || "info.kfimusic@gmail.com";
+const CONTACT_RECIPIENTS =
+  process.env.CONTACT_RECIPIENTS || CONTACT_RECIPIENT || "";
+const CONTACT_BCC = process.env.CONTACT_BCC || "";
 // Explicitly disable SMTP; all emails will be sent via Resend
 const mailer = null;
 
@@ -354,32 +359,74 @@ app.post("/api/contact", async (req, res) => {
         .status(400)
         .json({ ok: false, error: "Missing required fields" });
 
-    const to = CONTACT_RECIPIENT;
-    const subject = `New contact message from ${name}`;
+    const toList = (CONTACT_RECIPIENTS || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const to = toList.length > 0 ? toList : CONTACT_RECIPIENT;
+    const bccList = (CONTACT_BCC || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const subject = `[KFI Contact] ${name}`;
+    const safeName = String(name).replace(/[<>]/g, "");
+    const safeEmail = String(email).replace(/[<>]/g, "");
+    const safeMsg = String(message)
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\n/g, "<br/>");
     const html = `
-      <p><strong>Name:</strong> ${String(name).replace(/[<>]/g, "")}</p>
-      <p><strong>Email:</strong> ${String(email).replace(/[<>]/g, "")}</p>
-      <p><strong>Message:</strong></p>
-      <p>${String(message).replace(/\n/g, "<br/>")}</p>
-    `;
-    const text = `Name: ${name}\nEmail: ${email}\n\n${message}`;
+<!doctype html>
+<html>
+  <body style="margin:0;padding:24px;background:#0b0b0b;color:#e5e7eb;font-family:Inter,Segoe UI,Arial,sans-serif;">
+    <div style="max-width:640px;margin:0 auto;">
+      <div style="text-align:center;color:#fbbf24;font-weight:700;letter-spacing:.08em;font-size:12px;">K F I &nbsp; M U S I C</div>
+      <h1 style="margin:12px 0 16px;font-size:20px;color:#fff;">New contact message</h1>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#141518;border-radius:12px;border:1px solid rgba(255,255,255,0.06);">
+        <tr>
+          <td style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.06);"><strong>Name:</strong> ${safeName}</td>
+        </tr>
+        <tr>
+          <td style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.06);"><strong>Email:</strong> ${safeEmail}</td>
+        </tr>
+        <tr>
+          <td style="padding:16px 18px;"><strong>Message:</strong><br/><div style="margin-top:8px;white-space:normal;line-height:1.6;color:#d4d4d8;">${safeMsg}</div></td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>`;
+    const text = [
+      `New contact message`,
+      `Name: ${safeName}`,
+      `Email: ${safeEmail}`,
+      ``,
+      message,
+    ].join("\n");
 
     try {
       const r = await resend.emails.send({
         from: RESEND_FROM,
         to,
+        bcc: bccList.length ? bccList : undefined,
         subject,
         html,
         text,
+        headers: { "X-KFI-Contact": new Date().toISOString() },
         reply_to: email,
       });
       return res.json({
         ok: true,
         transport: "resend",
         id: r?.data?.id || null,
+        to,
+        bcc: bccList,
+        from: RESEND_FROM,
       });
     } catch (e) {
-      console.error("[contact] Resend send failed:", e);
+      // Log richer error details to aid debugging (non-sensitive)
+      const details = e?.response?.data || e?.data || e?.message || e;
+      console.error("[contact] Resend send failed:", details);
       return res.status(500).json({ ok: false, error: "Failed to send" });
     }
   } catch (e) {
@@ -610,17 +657,34 @@ app.get("/api/email/transport", (_req, res) => {
     from: SMTP_FROM || null,
     resendFrom: RESEND_FROM || null,
     to: CONTACT_RECIPIENT || null,
+    toList: CONTACT_RECIPIENTS || null,
+    bcc: CONTACT_BCC || null,
   });
 });
 
 // Send a test contact email (debug)
-app.post("/api/email/test-contact", async (_req, res) => {
+app.post("/api/email/test-contact", async (req, res) => {
   try {
     if (!resend)
       return res
         .status(500)
         .json({ ok: false, error: "Resend not configured" });
-    const to = CONTACT_RECIPIENT;
+    const body = req.body || {};
+    let to;
+    if (typeof body.to === "string" && body.to.includes("@")) {
+      to = body.to.includes(",")
+        ? body.to
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : body.to.trim();
+    } else {
+      const list = (CONTACT_RECIPIENTS || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      to = list.length > 0 ? list : (CONTACT_RECIPIENT || "").trim();
+    }
     const subject = "Test contact delivery";
     const html = `<p>This is a test contact email sent at ${new Date().toISOString()}.</p>`;
     const text = `Test contact email ${new Date().toISOString()}`;
@@ -631,7 +695,14 @@ app.post("/api/email/test-contact", async (_req, res) => {
       html,
       text,
     });
-    return res.json({ ok: true, transport: "resend", id: r?.data?.id || null });
+    const id = r?.data?.id || r?.id || null;
+    return res.json({
+      ok: true,
+      transport: "resend",
+      id,
+      to,
+      from: RESEND_FROM,
+    });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || String(e) });
   }
