@@ -27,3 +27,8 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Next.js
+.next
+kfi-music/.next
+kfi-music/.vercel

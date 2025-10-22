@@ -2,6 +2,7 @@ import React, {
   createContext,
   useContext,
   useMemo,
+  useCallback,
   useRef,
   useState,
   useEffect,
@@ -77,29 +78,41 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
     if (audioRef.current) audioRef.current.volume = volume;
   }, [volume]);
 
-  const play = () => {
+  const play = useCallback(() => {
     if (audioRef.current && current) {
       audioRef.current.play();
     }
-  };
-  const pause = () => {
+  }, [current]);
+  const pause = useCallback(() => {
     audioRef.current?.pause();
-  };
-  const toggle = () => (isPlaying ? pause() : play());
-  const setVolume = (v: number) => setVolumeState(Math.max(0, Math.min(1, v)));
-  const seek = (t: number) => {
-    if (audioRef.current)
-      audioRef.current.currentTime = Math.max(0, Math.min(duration, t));
-  };
-  const playTrack = (t: Track) => {
-    const audio = audioRef.current!;
-    if (!audio) return;
-    if (!current || current.audioUrl !== t.audioUrl) {
-      audio.src = t.audioUrl;
-      setCurrent(t);
-    }
-    audio.play();
-  };
+  }, []);
+  const toggle = useCallback(
+    () => (isPlaying ? pause() : play()),
+    [isPlaying, pause, play]
+  );
+  const setVolume = useCallback(
+    (v: number) => setVolumeState(Math.max(0, Math.min(1, v))),
+    []
+  );
+  const seek = useCallback(
+    (t: number) => {
+      if (audioRef.current)
+        audioRef.current.currentTime = Math.max(0, Math.min(duration, t));
+    },
+    [duration]
+  );
+  const playTrack = useCallback(
+    (t: Track) => {
+      const audio = audioRef.current!;
+      if (!audio) return;
+      if (!current || current.audioUrl !== t.audioUrl) {
+        audio.src = t.audioUrl;
+        setCurrent(t);
+      }
+      audio.play();
+    },
+    [current]
+  );
 
   const value = useMemo(
     () => ({
@@ -115,7 +128,19 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
       seek,
       playTrack,
     }),
-    [current, isPlaying, duration, currentTime, volume]
+    [
+      current,
+      isPlaying,
+      duration,
+      currentTime,
+      volume,
+      play,
+      pause,
+      toggle,
+      setVolume,
+      seek,
+      playTrack,
+    ]
   );
 
   return (

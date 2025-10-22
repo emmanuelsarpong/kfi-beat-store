@@ -14,6 +14,10 @@ export default function Download() {
   const [sentMsg, setSentMsg] = React.useState<string>("");
 
   React.useEffect(() => {
+    const isAllowed = (name: string) => {
+      const n = String(name || "").toLowerCase();
+      return n.endsWith(".wav") || n.endsWith(".zip");
+    };
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get("session_id");
     const beat = params.get("beat") || "lucid";
@@ -36,7 +40,18 @@ export default function Download() {
         const arr = Array.isArray(data?.files)
           ? (data.files as DownloadFile[])
           : [];
-        setFiles(arr.map((f) => ({ name: f.name, url: f.url })));
+        const cleaned = arr
+          .filter((f) => f && f.name && f.url && isAllowed(f.name))
+          .map((f) => ({ name: f.name, url: f.url }));
+        const rank = (name: string) => {
+          const n = String(name).toLowerCase();
+          if (n === "stems.zip") return 0;
+          if (n.endsWith(".wav")) return 1;
+          if (n.endsWith(".zip")) return 2;
+          return 3;
+        };
+        cleaned.sort((a, b) => rank(a.name) - rank(b.name));
+        setFiles(cleaned);
         if (typeof data?.beat === "string") setFolder(data.beat);
       })
       .catch((e) => setError(String(e)))
