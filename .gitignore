@@ -32,3 +32,6 @@ dist-ssr
 .next
 kfi-music/.next
 kfi-music/.vercel
+
+# Prevent Bun from being auto-detected by Railway/Nixpacks
+bun.lockb
