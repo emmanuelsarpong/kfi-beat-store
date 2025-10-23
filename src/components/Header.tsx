@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Heart } from "lucide-react";
 import kfiLogo from "@/assets/logo.png";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
@@ -65,6 +65,13 @@ const Header = () => {
             >
               Store
             </Link>
+            <Link
+              to="/favorites"
+              className="text-gray-300 hover:text-white transition-colors font-medium flex items-center gap-1"
+              onClick={() => setOpen(false)}
+            >
+              <Heart className="h-4 w-4" /> Favorites
+            </Link>
             <a
               href="/#contact"
               onClick={handleContactClick}
@@ -117,6 +124,13 @@ const Header = () => {
                 onClick={() => setOpen(false)}
               >
                 Store
+              </Link>
+              <Link
+                to="/favorites"
+                className="text-3xl font-bold text-white"
+                onClick={() => setOpen(false)}
+              >
+                Favorites
               </Link>
               <a
                 href="/#contact"

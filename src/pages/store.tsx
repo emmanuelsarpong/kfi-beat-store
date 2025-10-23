@@ -71,7 +71,7 @@ const Store = () => {
           {/* Subtle gradient divider for visual separation */}
           <div className="mx-auto h-px w-full max-w-3xl bg-gradient-to-r from-transparent via-zinc-700/60 to-transparent mb-12" />
           {/* Responsive Search Bar */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-12 justify-center reveal relative z-10">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 justify-center reveal relative z-10">
             <input
               type="text"
               placeholder="Search by title or genre..."
@@ -92,13 +92,25 @@ const Store = () => {
                 </option>
               ))}
             </select>
-            <KeyFilter value={keyFilter} onChange={setKeyFilter} />
-            <BPMFilter
-              bpmRange={bpmRange}
-              setBpmRange={setBpmRange}
-              bpmExact={bpmExact}
-              setBpmExact={setBpmExact}
-            />
+          </div>
+          {/* Key + BPM side-by-side row (50/50) */}
+          <div className="flex gap-3 sm:gap-4 mb-12 reveal">
+            <div className="w-1/2">
+              <KeyFilter
+                value={keyFilter}
+                onChange={setKeyFilter}
+                fullWidth
+              />
+            </div>
+            <div className="w-1/2">
+              <BPMFilter
+                bpmRange={bpmRange}
+                setBpmRange={setBpmRange}
+                bpmExact={bpmExact}
+                setBpmExact={setBpmExact}
+                fullWidth
+              />
+            </div>
           </div>
           {/* Removed vibe + sorting bar */}
           {/* Responsive Beats Grid */}

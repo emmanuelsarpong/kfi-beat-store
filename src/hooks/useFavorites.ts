@@ -23,12 +23,14 @@ interface FavoritesContextValue {
   toggle: (beat: FavoriteBeatMeta) => void;
 }
 
-const STORAGE_KEY = "kfi:favorites:v1";
+const STORAGE_KEY = "kfi:favorites:session:v1";
 
 function readStorage(): FavoriteBeatMeta[] {
   try {
     const raw =
-      typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
+      typeof window !== "undefined"
+        ? sessionStorage.getItem(STORAGE_KEY)
+        : null;
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) return parsed;
@@ -41,7 +43,7 @@ function readStorage(): FavoriteBeatMeta[] {
 function writeStorage(items: FavoriteBeatMeta[]) {
   try {
     if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     }
   } catch {
     /* ignore quota errors */
