@@ -42,7 +42,12 @@ const FLAT_NOTES = [
   "B",
 ] as const;
 
-export default function KeyFilter({ value, onChange, fullWidth, className }: KeyFilterProps) {
+export default function KeyFilter({
+  value,
+  onChange,
+  fullWidth,
+  className,
+}: KeyFilterProps) {
   const [tab, setTab] = useState<"flat" | "sharp">("flat");
   const [temp, setTemp] = useState<KeyFilterValue>(value);
 

@@ -95,25 +95,26 @@ const Store = () => {
                   </option>
                 ))}
               </select>
-              {/* Key (50/50 on phones) */}
-              <div className="w-1/2 md:w-auto">
-                <KeyFilter
-                  value={keyFilter}
-                  onChange={setKeyFilter}
-                  fullWidth
-                  className="w-full md:w-auto"
-                />
-              </div>
-              {/* BPM (50/50 on phones) */}
-              <div className="w-1/2 md:w-auto">
-                <BPMFilter
-                  bpmRange={bpmRange}
-                  setBpmRange={setBpmRange}
-                  bpmExact={bpmExact}
-                  setBpmExact={setBpmExact}
-                  fullWidth
-                  className="w-full md:w-auto"
-                />
+              {/* Key + BPM group: grid 2 cols on phones (true 50/50), inline on desktop */}
+              <div className="w-full md:w-auto grid grid-cols-2 gap-2 md:grid-cols-[auto_auto] md:flex md:gap-4">
+                <div className="w-full md:w-auto">
+                  <KeyFilter
+                    value={keyFilter}
+                    onChange={setKeyFilter}
+                    fullWidth
+                    className="w-full md:w-auto"
+                  />
+                </div>
+                <div className="w-full md:w-auto">
+                  <BPMFilter
+                    bpmRange={bpmRange}
+                    setBpmRange={setBpmRange}
+                    bpmExact={bpmExact}
+                    setBpmExact={setBpmExact}
+                    fullWidth
+                    className="w-full md:w-auto"
+                  />
+                </div>
               </div>
             </div>
           </div>

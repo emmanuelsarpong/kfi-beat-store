@@ -43,7 +43,7 @@ function readStorage(): FavoriteBeatMeta[] {
 function writeStorage(items: FavoriteBeatMeta[]) {
   try {
     if (typeof window !== "undefined") {
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     }
   } catch {
     /* ignore quota errors */

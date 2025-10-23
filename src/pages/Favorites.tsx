@@ -8,7 +8,7 @@ const FavoritesPage = () => {
   const { favorites, ready } = useFavorites();
   const favoriteBeats = favorites
     .map((f) => allBeats.find((b) => b.id === f.id))
-    .filter((b): b is typeof allBeats[number] => Boolean(b));
+    .filter((b): b is (typeof allBeats)[number] => Boolean(b));
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
@@ -20,13 +20,16 @@ const FavoritesPage = () => {
               ❤️ Your Favorites
             </h1>
             <p className="text-zinc-400 text-sm sm:text-base max-w-2xl mx-auto">
-              Quickly revisit the beats you saved this session. This list clears when you close your browser.
+              Quickly revisit the beats you saved this session. This list clears
+              when you close your browser.
             </p>
           </div>
           {!ready ? (
             <div className="flex justify-center mt-10">Loading…</div>
           ) : favoriteBeats.length === 0 ? (
-            <div className="text-center text-zinc-400">No favorites yet. Tap the heart on any beat to add it here.</div>
+            <div className="text-center text-zinc-400">
+              No favorites yet. Tap the heart on any beat to add it here.
+            </div>
           ) : (
             <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-6 sm:gap-y-14 sm:gap-x-8">
               {favoriteBeats.map((beat) => (
