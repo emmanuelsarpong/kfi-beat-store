@@ -64,16 +64,16 @@ export default function KeyFilter({
     value.note && value.quality ? `${value.note} ${value.quality}` : "Key";
 
   return (
-    <Popover className="z-[1000]">
+    <Popover className="z-40">
       <Popover.Button
-        className={`px-4 py-2 rounded bg-zinc-900 text-white border border-zinc-700 relative z-[1050] shadow-sm hover:bg-zinc-800 transition-colors ${
+        className={`px-4 py-2 rounded bg-zinc-900 text-white border border-zinc-700 relative z-50 shadow-sm hover:bg-zinc-800 transition-colors ${
           fullWidth ? "w-full" : ""
         } ${className ?? ""}`}
         onClick={openInit}
       >
         {label}
       </Popover.Button>
-      <Popover.Panel className="absolute z-[1100] mt-2 left-1/2 -translate-x-1/2 w-[min(20rem,92vw)] sm:w-80 bg-black/95 backdrop-blur-md border border-zinc-800 rounded-lg shadow-2xl p-4 ring-1 ring-white/5">
+      <Popover.Panel className="absolute z-100 mt-2 left-1/2 -translate-x-1/2 w-[min(20rem,92vw)] sm:w-80 bg-black/95 backdrop-blur-md border border-zinc-800 rounded-lg shadow-2xl p-4 ring-1 ring-white/5">
         <div className="flex border-b border-zinc-700 mb-4">
           <button
             className={`flex-1 py-2 text-sm font-semibold ${
