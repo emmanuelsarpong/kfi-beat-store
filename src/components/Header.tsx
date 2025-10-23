@@ -100,17 +100,17 @@ const Header = () => {
         </div>
       </div>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center min-h-screen">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center min-h-screen md:hidden">
           {/* Strong blurry overlay */}
           <div
-            className="absolute inset-0 bg-black/80 backdrop-blur-[12px]"
+            className="absolute inset-0 bg-black/85 backdrop-blur-[20px]"
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
           {/* Centered modal menu */}
-          <div className="relative z-10 flex flex-col items-center justify-center w-full h-full">
+          <div className="relative z-[2100] flex flex-col items-center justify-center w-full h-full">
             <button
-              className="fixed top-4 right-4 text-white p-2 z-50 bg-transparent border-0 -mt-2"
+              className="fixed top-4 right-4 text-white p-2 z-[2200] bg-transparent border-0 -mt-2"
               onClick={() => setOpen(false)}
               aria-label="Close menu"
             >
