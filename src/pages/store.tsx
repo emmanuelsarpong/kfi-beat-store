@@ -70,48 +70,51 @@ const Store = () => {
           </div>
           {/* Subtle gradient divider for visual separation */}
           <div className="mx-auto h-px w-full max-w-3xl bg-gradient-to-r from-transparent via-zinc-700/60 to-transparent mb-12" />
-          {/* Responsive Search Bar */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 justify-center reveal relative z-10">
-            <input
-              type="text"
-              placeholder="Search by title or genre..."
-              className="px-4 py-2 rounded bg-zinc-900 text-white border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-500 w-full sm:w-72"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <select
-              aria-label="Filter by genre"
-              className="px-4 py-2 rounded bg-zinc-900 text-white border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-500 w-full sm:w-48"
-              value={genre}
-              onChange={(e) => setGenre(e.target.value)}
-            >
-              <option value="">All Genres</option>
-              {uniqueGenres.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* Key + BPM filters: 50/50 only on phones; natural widths on desktop */}
-          <div className="flex gap-3 sm:gap-4 mb-12 reveal justify-center flex-wrap md:flex-nowrap">
-            <div className="w-1/2 md:w-auto">
-              <KeyFilter
-                value={keyFilter}
-                onChange={setKeyFilter}
-                fullWidth
-                className="w-full md:w-auto"
+          {/* Controls row: Search, Genre, Key, BPM on one line (desktop). On phones: Search, Genre full-width; Key/BPM 50/50. */}
+          <div className="reveal relative isolate z-[150] mb-10">
+            <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-3 sm:gap-4">
+              {/* Search */}
+              <input
+                type="text"
+                placeholder="Search by title or genre..."
+                className="px-4 py-2 rounded bg-zinc-900 text-white border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-500 w-full md:w-96"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
               />
-            </div>
-            <div className="w-1/2 md:w-auto">
-              <BPMFilter
-                bpmRange={bpmRange}
-                setBpmRange={setBpmRange}
-                bpmExact={bpmExact}
-                setBpmExact={setBpmExact}
-                fullWidth
-                className="w-full md:w-auto"
-              />
+              {/* Genre */}
+              <select
+                aria-label="Filter by genre"
+                className="px-4 py-2 rounded bg-zinc-900 text-white border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-500 w-full md:w-56"
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+              >
+                <option value="">All Genres</option>
+                {uniqueGenres.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </select>
+              {/* Key (50/50 on phones) */}
+              <div className="w-1/2 md:w-auto">
+                <KeyFilter
+                  value={keyFilter}
+                  onChange={setKeyFilter}
+                  fullWidth
+                  className="w-full md:w-auto"
+                />
+              </div>
+              {/* BPM (50/50 on phones) */}
+              <div className="w-1/2 md:w-auto">
+                <BPMFilter
+                  bpmRange={bpmRange}
+                  setBpmRange={setBpmRange}
+                  bpmExact={bpmExact}
+                  setBpmExact={setBpmExact}
+                  fullWidth
+                  className="w-full md:w-auto"
+                />
+              </div>
             </div>
           </div>
           {/* Removed vibe + sorting bar */}

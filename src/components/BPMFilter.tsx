@@ -43,16 +43,16 @@ const BpmFilter = ({
   };
 
   return (
-    <Popover className="relative z-50">
+    <Popover className="relative z-[200]">
       <Popover.Button
-        className={`px-4 py-2 rounded bg-zinc-900 text-white border border-zinc-700 relative z-50 shadow-sm hover:bg-zinc-800 transition-colors ${
+        className={`px-4 py-2 rounded bg-zinc-900 text-white border border-zinc-700 relative z-[210] shadow-sm hover:bg-zinc-800 transition-colors ${
           fullWidth ? "w-full" : ""
         } ${className ?? ""}`}
         onClick={handlePopoverOpen}
       >
         BPM
       </Popover.Button>
-      <Popover.Panel className="absolute z-50 mt-2 left-1/2 -translate-x-1/2 w-[min(18rem,92vw)] sm:w-72 bg-black/95 backdrop-blur-md border border-zinc-800 rounded-lg shadow-2xl p-4 ring-1 ring-white/5">
+      <Popover.Panel className="absolute z-[300] mt-2 left-1/2 -translate-x-1/2 w-[min(18rem,92vw)] sm:w-72 bg-black/95 backdrop-blur-md border border-zinc-800 rounded-lg shadow-2xl p-4 ring-1 ring-white/5">
         <div className="flex border-b border-zinc-700 mb-4">
           <button
             className={`flex-1 py-2 text-sm font-semibold ${
