@@ -14,7 +14,7 @@ const BeatsGrid = () => {
             🔥 Premium Catalog
           </span>
         </h2>
-        <p className="text-center text-sm md:text-base text-zinc-400 max-w-2xl mx-auto mb-10">
+        <p className="text-center text-sm md:text-base text-zinc-400 max-w-2xl mx-auto mb-10 px-6 md:px-8">
           Handcrafted sonic landscapes engineered for replay value. Browse,
           preview & build your next record faster.
         </p>

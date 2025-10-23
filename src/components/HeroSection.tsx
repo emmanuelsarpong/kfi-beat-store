@@ -63,8 +63,8 @@ const HeroSection = () => {
       <div className="absolute inset-0 w-full h-full bg-[#0B0F1A] opacity-40 pointer-events-none z-10" />
       {/* Gradient overlay at bottom */}
       <div className="pointer-events-none absolute bottom-0 w-full h-24 bg-gradient-to-b from-transparent to-black z-20" />
-      <div className="relative z-30 flex flex-col items-center w-full">
-        <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-4 text-center">
+      <div className="relative z-30 flex flex-col items-center w-full max-w-7xl mx-auto px-6 md:px-8">
+        <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-4 text-center px-2 md:px-4">
           Premium exclusive beats for the modern sound
         </h1>
         <div className="flex-1" />
