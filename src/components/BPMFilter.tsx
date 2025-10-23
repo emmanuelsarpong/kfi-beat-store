@@ -18,6 +18,8 @@ const BpmFilter = ({
   setBpmRange,
   bpmExact,
   setBpmExact,
+  fullWidth,
+  className,
 }: BpmFilterProps) => {
   const [tab, setTab] = useState<"range" | "exact">("range");
   const [tempRange, setTempRange] = useState<[number, number]>(bpmRange);
@@ -44,8 +46,8 @@ const BpmFilter = ({
     <Popover className="relative z-30">
       <Popover.Button
         className={`px-4 py-2 rounded bg-zinc-900 text-white border border-zinc-700 relative z-30 shadow-sm hover:bg-zinc-800 transition-colors ${
-          props.fullWidth ? "w-full" : ""
-        } ${props.className ?? ""}`}
+          fullWidth ? "w-full" : ""
+        } ${className ?? ""}`}
         onClick={handlePopoverOpen}
       >
         BPM
