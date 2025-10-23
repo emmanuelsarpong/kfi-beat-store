@@ -88,6 +88,7 @@ export const beats: BeatData[] = [
     genre: "House",
     bpm: 122,
     mood: "Party",
+    key: "D# min",
     price: 550.0,
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/i%20like%20it/I%20Like%20It.mp3",
