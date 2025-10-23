@@ -93,22 +93,24 @@ const Store = () => {
               ))}
             </select>
           </div>
-          {/* Key + BPM side-by-side row (50/50) */}
-          <div className="flex gap-3 sm:gap-4 mb-12 reveal">
-            <div className="w-1/2">
+          {/* Key + BPM filters: 50/50 only on phones; natural widths on desktop */}
+          <div className="flex gap-3 sm:gap-4 mb-12 reveal justify-center flex-wrap md:flex-nowrap">
+            <div className="w-1/2 md:w-auto">
               <KeyFilter
                 value={keyFilter}
                 onChange={setKeyFilter}
                 fullWidth
+                className="w-full md:w-auto"
               />
             </div>
-            <div className="w-1/2">
+            <div className="w-1/2 md:w-auto">
               <BPMFilter
                 bpmRange={bpmRange}
                 setBpmRange={setBpmRange}
                 bpmExact={bpmExact}
                 setBpmExact={setBpmExact}
                 fullWidth
+                className="w-full md:w-auto"
               />
             </div>
           </div>
