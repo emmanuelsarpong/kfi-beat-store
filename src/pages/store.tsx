@@ -96,7 +96,7 @@ const Store = () => {
                 ))}
               </select>
               {/* Key + BPM group: grid 2 cols on phones (true 50/50), inline on desktop */}
-              <div className="w-full md:w-auto grid grid-cols-2 gap-2 md:grid-cols-[auto_auto] md:flex md:gap-4">
+              <div className="relative w-full md:w-auto grid grid-cols-2 gap-2 md:grid-cols-[auto_auto] md:flex md:gap-4">
                 <div className="w-full md:w-auto">
                   <KeyFilter
                     value={keyFilter}

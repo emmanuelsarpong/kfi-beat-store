@@ -64,7 +64,7 @@ export default function KeyFilter({
     value.note && value.quality ? `${value.note} ${value.quality}` : "Key";
 
   return (
-    <Popover className="relative z-[1000]">
+    <Popover className="z-[1000]">
       <Popover.Button
         className={`px-4 py-2 rounded bg-zinc-900 text-white border border-zinc-700 relative z-[1050] shadow-sm hover:bg-zinc-800 transition-colors ${
           fullWidth ? "w-full" : ""
