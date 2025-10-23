@@ -115,7 +115,7 @@ const Header = () => {
                 className="text-3xl font-bold text-white"
                 onClick={() => setOpen(false)}
               >
-                Beats
+                Store
               </a>
               <a
                 href="/#contact"

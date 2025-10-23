@@ -18,7 +18,8 @@ export async function startCheckout(beatId: string = "lucid") {
   })();
 
   // Prefer same-origin in production. Only use VITE_SERVER_URL when it's set to a non-localhost URL.
-  const envServer = (import.meta.env.VITE_SERVER_URL as string | undefined) || "";
+  const envServer =
+    (import.meta.env.VITE_SERVER_URL as string | undefined) || "";
   const isLocalEnv = /localhost|127\.0\.0\.1|^$/i.test(envServer);
   const serverUrl = isLocalEnv ? inferredServer : envServer;
   const frontendUrl =

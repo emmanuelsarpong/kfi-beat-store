@@ -64,7 +64,7 @@ export default function KeyFilter({ value, onChange }: KeyFilterProps) {
       >
         {label}
       </Popover.Button>
-      <Popover.Panel className="absolute z-40 mt-2 right-0 w-80 bg-black/95 backdrop-blur-md border border-zinc-800 rounded-lg shadow-2xl p-4 ring-1 ring-white/5">
+      <Popover.Panel className="absolute z-40 mt-2 right-0 w-[min(20rem,90vw)] sm:w-80 bg-black/95 backdrop-blur-md border border-zinc-800 rounded-lg shadow-2xl p-4 ring-1 ring-white/5">
         <div className="flex border-b border-zinc-700 mb-4">
           <button
             className={`flex-1 py-2 text-sm font-semibold ${
