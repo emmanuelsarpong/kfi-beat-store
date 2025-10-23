@@ -2,7 +2,7 @@ import { ExternalLink } from "lucide-react";
 import kfiLogo from "@/assets/logo.png";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 
 const Header = () => {
   const [open, setOpen] = useState(false);
@@ -58,12 +58,13 @@ const Header = () => {
             </a>
           </div>
           <nav className="hidden md:flex items-center space-x-8">
-            <a
-              href="/store"
+            <Link
+              to="/store"
               className="text-gray-300 hover:text-white transition-colors font-medium"
+              onClick={() => setOpen(false)}
             >
               Store
-            </a>
+            </Link>
             <a
               href="/#contact"
               onClick={handleContactClick}
@@ -110,13 +111,13 @@ const Header = () => {
             </button>
             {/* Menu links */}
             <nav className="flex flex-col items-center space-y-8">
-              <a
-                href="/store"
+              <Link
+                to="/store"
                 className="text-3xl font-bold text-white"
                 onClick={() => setOpen(false)}
               >
                 Store
-              </a>
+              </Link>
               <a
                 href="/#contact"
                 className="text-3xl font-bold text-white"
