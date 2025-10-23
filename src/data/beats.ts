@@ -130,7 +130,7 @@ export const beats: BeatData[] = [
   {
     id: "1",
     title: "Lucid",
-    genre: "Raggaton",
+    genre: "Raggaeton",
     bpm: 105,
     mood: "Euphoric",
     key: "C# min",
