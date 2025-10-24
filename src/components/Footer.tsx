@@ -106,17 +106,7 @@ const Footer = () => {
               <span className="hidden sm:inline">•</span>
               <span className="text-zinc-500">All rights reserved.</span>
             </div>
-            <div className="flex items-center gap-4">
-              <a href="/changelog" className="footer-link subtle">
-                Changelog
-              </a>
-              <a href="/roadmap" className="footer-link subtle">
-                Roadmap
-              </a>
-              <a href="/support" className="footer-link subtle">
-                Support
-              </a>
-            </div>
+            {/* Removed Changelog / Roadmap / Support links per request */}
           </div>
         </div>
       </div>
