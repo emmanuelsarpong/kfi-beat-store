@@ -54,7 +54,7 @@ const Footer = () => {
               <div className="flex flex-col gap-3">
                 <span className="footer-label">Explore</span>
                 <a href="#beats" className="footer-link">
-                  🔥 Beat Catalog
+                  🔥 Latest Beats
                 </a>
                 <a href="/store" className="footer-link">
                   🎧 Browse Store

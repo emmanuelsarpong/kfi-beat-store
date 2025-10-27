@@ -17,7 +17,8 @@ const BeatsGrid = () => {
           </span>
         </h2>
         <p className="text-center text-sm md:text-base text-zinc-400 max-w-2xl mx-auto mb-10 px-6 md:px-8">
-          The newest six uploads, fresh from the studio. Preview, favorite, and buy instantly.
+          The newest six uploads, fresh from the studio. Preview, favorite, and
+          buy instantly.
         </p>
 
         {/* Restored simple responsive grid (6 cards) */}
