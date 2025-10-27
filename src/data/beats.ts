@@ -124,7 +124,7 @@ export const beats: BeatData[] = [
     genre: "Melodic Hip Hop",
     bpm: 88,
     mood: "Sad",
-    price: 29.99,
+    price: 450.0,
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/memories/Memories.mp3",
   },
