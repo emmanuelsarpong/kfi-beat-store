@@ -2,8 +2,10 @@ import React from "react";
 import BeatCard from "./BeatCard";
 import { beats as beatsData } from "@/data/beats";
 
-// Only show the most recent 6 beats. We treat the order in beats.ts as recency.
-const beats = beatsData.slice(0, 6);
+// Show the 6 most recently uploaded beats by descending numeric id (newest first)
+const beats = [...beatsData]
+  .sort((a, b) => Number(b.id) - Number(a.id))
+  .slice(0, 6);
 
 const BeatsGrid = () => {
   return (
@@ -11,12 +13,11 @@ const BeatsGrid = () => {
       <div className="container mx-auto max-w-7xl p-0 md:px-4">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 tracking-tight">
           <span className="bg-gradient-to-r from-zinc-200 via-white to-zinc-300 bg-clip-text text-transparent">
-            🔥 Premium Catalog
+            � Latest Beats
           </span>
         </h2>
         <p className="text-center text-sm md:text-base text-zinc-400 max-w-2xl mx-auto mb-10 px-6 md:px-8">
-          Handcrafted sonic landscapes engineered for replay value. Browse,
-          preview & build your next record faster.
+          The newest six uploads, fresh from the studio. Preview, favorite, and buy instantly.
         </p>
 
         {/* Restored simple responsive grid (6 cards) */}
