@@ -824,6 +824,90 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, frontend: FRONTEND_URL });
 });
 
+// Public: expose current Stripe prices mapped to beat keys for UI sync
+app.get("/api/prices", async (_req, res) => {
+  try {
+    if (!stripe)
+      return res
+        .status(500)
+        .json({ ok: false, error: "Stripe not configured" });
+
+    // Build list of known identifiers from env mapping
+    const pairs = Array.from(STRIPE_ID_TO_BEAT.entries()); // [ [priceIdOrProdId, beatKey], ... ]
+    const out = {};
+    await Promise.all(
+      pairs.map(async ([stripeId, beatKey]) => {
+        try {
+          let priceObj = null;
+          if (typeof stripeId === "string" && stripeId.startsWith("price_")) {
+            priceObj = await stripe.prices.retrieve(stripeId);
+          } else if (
+            typeof stripeId === "string" &&
+            stripeId.startsWith("prod_")
+          ) {
+            // Resolve product -> default price
+            try {
+              const product = await stripe.products.retrieve(stripeId);
+              const dp = product?.default_price;
+              if (typeof dp === "string") {
+                priceObj = await stripe.prices.retrieve(dp);
+              } else if (dp && typeof dp === "object" && dp.id) {
+                priceObj = await stripe.prices.retrieve(dp.id);
+              } else {
+                const prices = await stripe.prices.list({
+                  product: stripeId,
+                  active: true,
+                  limit: 1,
+                });
+                priceObj = prices?.data?.[0] || null;
+              }
+            } catch (e) {
+              console.warn(
+                "[prices] failed to resolve default price for product",
+                stripeId,
+                e?.message || e
+              );
+            }
+          }
+          if (!priceObj) return;
+          const unit =
+            typeof priceObj.unit_amount === "number"
+              ? priceObj.unit_amount
+              : null;
+          const currency = priceObj.currency || "usd";
+          if (unit === null) return;
+          out[beatKey] = {
+            unit_amount: unit,
+            currency,
+            amount: unit / 100,
+            price_id: priceObj.id,
+            product_id:
+              typeof priceObj.product === "string"
+                ? priceObj.product
+                : priceObj.product?.id || null,
+          };
+        } catch (e) {
+          console.warn(
+            "[prices] failed for",
+            beatKey,
+            stripeId,
+            e?.message || e
+          );
+        }
+      })
+    );
+    return res.json({
+      ok: true,
+      prices: out,
+      count: Object.keys(out).length,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error("[prices] endpoint error", e);
+    return res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
 // Friendly root message to avoid confusion when hitting /
 app.get("/", (_req, res) => {
   res

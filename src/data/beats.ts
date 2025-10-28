@@ -37,7 +37,7 @@ export const beats: BeatData[] = [
   {
     id: "28",
     title: "Wait",
-    genre: "Hip Hop",
+    genre: "rnb",
     bpm: 99,
     mood: "Vibey",
     key: "D min",
@@ -152,7 +152,7 @@ export const beats: BeatData[] = [
     bpm: 94,
     mood: "Energetic",
     key: "C# min",
-    price: 700.0,
+    price: 600.0,
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/prism/Prism.mp3",
   },

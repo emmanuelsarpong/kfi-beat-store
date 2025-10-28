@@ -33,15 +33,18 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
   const isCurrent = current?.id === beat.id;
 
   // Neon color class mapping by genre (fallback slate)
+  // Case-insensitive mapping; normalize RnB / R&B / rnb to same style
   const genreClassMap: Record<string, string> = {
-    Trap: "np-red nc-red",
-    Drill: "np-orange nc-orange",
-    Synthwave: "np-cyan nc-cyan",
-    Ambient: "np-purple nc-purple",
-    LoFi: "np-blue nc-blue",
-    RnB: "np-pink nc-pink",
+    trap: "np-red nc-red",
+    drill: "np-orange nc-orange",
+    synthwave: "np-cyan nc-cyan",
+    ambient: "np-purple nc-purple",
+    lofi: "np-blue nc-blue",
+    rnb: "np-pink nc-pink",
+    "r&b": "np-pink nc-pink",
   };
-  const genreClass = genreClassMap[beat.genre] || "np-slate nc-slate";
+  const genreKey = String(beat.genre || "").toLowerCase();
+  const genreClass = genreClassMap[genreKey] || "np-slate nc-slate";
 
   const handlePurchase = async () => {
     // Prefer server-driven checkout if configured, else fallback to paymentLink
