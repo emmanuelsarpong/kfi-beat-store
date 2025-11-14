@@ -21,6 +21,18 @@ const VITE_SERVER_URL: string | undefined =
     : undefined;
 
 export const beats: BeatData[] = [
+  // Newest: Bliss
+  {
+    id: "30",
+    title: "Bliss",
+    genre: "Afrobeats",
+    bpm: 100,
+    mood: "Chill",
+    key: "G# min",
+    price: 400.0,
+    audioUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/bliss/Bliss.mp3",
+  },
   // Newest: Sunset
   {
     id: "29",
