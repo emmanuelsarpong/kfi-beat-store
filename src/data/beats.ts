@@ -21,6 +21,18 @@ const VITE_SERVER_URL: string | undefined =
     : undefined;
 
 export const beats: BeatData[] = [
+  // Newest: Ashes
+  {
+    id: "31",
+    title: "Ashes",
+    genre: "Trap",
+    bpm: 135,
+    mood: "Energetic",
+    key: "C min",
+    price: 500.0,
+    audioUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/ashes/Ashes.mp3",
+  },
   // Newest: Bliss
   {
     id: "30",
