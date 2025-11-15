@@ -31,7 +31,7 @@ export const beats: BeatData[] = [
     key: "D min",
     price: 450.0,
     audioUrl:
-      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/cant%20stop/Can't%20Stop.mp3",
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/cant%20stop/Cant%20Stop.mp3",
   },
   // Newest: Ashes
   {
