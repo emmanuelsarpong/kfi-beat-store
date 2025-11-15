@@ -21,6 +21,18 @@ const VITE_SERVER_URL: string | undefined =
     : undefined;
 
 export const beats: BeatData[] = [
+  // Newest: Can't Stop
+  {
+    id: "32",
+    title: "Can't Stop",
+    genre: "Trap",
+    bpm: 135,
+    mood: "Party",
+    key: "D min",
+    price: 450.0,
+    audioUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/cant%20stop/Can't%20Stop.mp3",
+  },
   // Newest: Ashes
   {
     id: "31",
@@ -28,7 +40,7 @@ export const beats: BeatData[] = [
     genre: "Trap",
     bpm: 135,
     mood: "Energetic",
-    key: "C min",
+    key: "A# min",
     price: 500.0,
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/ashes/Ashes.mp3",
