@@ -61,7 +61,7 @@ export const beats: BeatData[] = [
   {
     id: "29",
     title: "Sunset",
-    genre: "R&B",
+    genre: "RnB",
     bpm: 98,
     mood: "Chill",
     key: "E min",
@@ -85,7 +85,7 @@ export const beats: BeatData[] = [
   {
     id: "27",
     title: "Roses",
-    genre: "R&B",
+    genre: "RnB",
     bpm: 110,
     mood: "Moody",
     key: "F# min",
@@ -145,7 +145,7 @@ export const beats: BeatData[] = [
   {
     id: "22",
     title: "Falling",
-    genre: "Trap / R&B",
+    genre: "Trap / RnB",
     bpm: 96,
     mood: "Dreamy",
     key: "F min",
@@ -206,7 +206,7 @@ export const beats: BeatData[] = [
   {
     id: "4",
     title: "Eyes On Me",
-    genre: "R&B",
+    genre: "RnB",
     bpm: 105,
     mood: "Chill",
     key: "C min",

@@ -33,7 +33,7 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
   const isCurrent = current?.id === beat.id;
 
   // Neon color class mapping by genre (fallback slate)
-  // Case-insensitive mapping; normalize RnB / R&B / rnb to same style
+  // Case-insensitive mapping; normalize RnB / rnb to same style
   const genreClassMap: Record<string, string> = {
     trap: "np-red nc-red",
     drill: "np-orange nc-orange",
@@ -41,7 +41,6 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
     ambient: "np-purple nc-purple",
     lofi: "np-blue nc-blue",
     rnb: "np-pink nc-pink",
-    "r&b": "np-pink nc-pink",
   };
   const genreKey = String(beat.genre || "").toLowerCase();
   const genreClass = genreClassMap[genreKey] || "np-slate nc-slate";
