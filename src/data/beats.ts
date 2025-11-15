@@ -73,7 +73,7 @@ export const beats: BeatData[] = [
   {
     id: "28",
     title: "Wait",
-    genre: "rnb",
+    genre: "RnB",
     bpm: 99,
     mood: "Vibey",
     key: "D min",
