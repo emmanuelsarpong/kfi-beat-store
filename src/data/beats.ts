@@ -25,7 +25,7 @@ export const beats: BeatData[] = [
   {
     id: "32",
     title: "Can't Stop",
-    genre: "Afrohouse",
+    genre: "Afro House",
     bpm: 135,
     mood: "Party",
     key: "D min",
