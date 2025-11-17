@@ -21,6 +21,17 @@ const VITE_SERVER_URL: string | undefined =
     : undefined;
 
 export const beats: BeatData[] = [
+  // Newest: Motion
+  {
+    id: "33",
+    title: "Motion",
+    genre: "Afrobeats",
+    bpm: 115,
+    mood: "Vibey",
+    price: 400.0,
+    audioUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/motion/Motion.mp3",
+  },
   // Newest: Can't Stop
   {
     id: "32",
