@@ -99,11 +99,7 @@ const App = () => (
           <Sonner />
           <Router>
             <Suspense
-              fallback={
-                <div className="flex items-center justify-center min-h-[40vh]">
-                  <LoadingSpinner size="lg" />
-                </div>
-              }
+              fallback={<LoadingSpinner size="lg" className="min-h-screen" />}
             >
               <RouteFade>
                 <Routes>
