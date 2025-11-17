@@ -21,6 +21,18 @@ const VITE_SERVER_URL: string | undefined =
     : undefined;
 
 export const beats: BeatData[] = [
+  // Newest: Gravity
+  {
+    id: "34",
+    title: "Gravity",
+    genre: "Amapiano",
+    bpm: 110,
+    mood: "Chill",
+    key: "D min",
+    price: 400.0,
+    audioUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/gravity/Gravity.mp3",
+  },
   // Newest: Motion
   {
     id: "33",
@@ -28,6 +40,7 @@ export const beats: BeatData[] = [
     genre: "Afrobeats",
     bpm: 115,
     mood: "Vibey",
+    key: "C# min",
     price: 400.0,
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/motion/Motion.mp3",
