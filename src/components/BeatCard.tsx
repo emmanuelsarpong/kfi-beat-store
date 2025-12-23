@@ -304,5 +304,25 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
   );
 };
 
-const BeatCard = React.memo(BeatCardBase);
+function shallowBeatEqual(a: any, b: any) {
+  if (a === b) return true;
+  const keys = [
+    "id",
+    "title",
+    "genre",
+    "bpm",
+    "mood",
+    "key",
+    "price",
+    "audioUrl",
+    "coverImage",
+    "paymentLink",
+  ];
+  for (const k of keys) {
+    if (a.beat?.[k] !== b.beat?.[k]) return false;
+  }
+  return true;
+}
+
+const BeatCard = React.memo(BeatCardBase, shallowBeatEqual);
 export default BeatCard;

@@ -27,6 +27,7 @@ type PlayerContextType = {
   setVolume: (v: number) => void;
   seek: (t: number) => void;
   playTrack: (t: Track) => void;
+  playRandom: (allTracks: Track[]) => void;
 };
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
@@ -46,6 +47,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolumeState] = useState(1);
+  const [playedIds, setPlayedIds] = useState<Set<string>>(new Set());
 
   if (!audioRef.current && typeof Audio !== "undefined") {
     audioRef.current = new Audio();
@@ -114,6 +116,32 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
     [current]
   );
 
+  const playRandom = useCallback(
+    (allTracks: Track[]) => {
+      if (!allTracks || allTracks.length === 0) return;
+
+      const trackIds = allTracks
+        .map((t) => t.id)
+        .filter((id): id is string => Boolean(id));
+      if (trackIds.length === 0) return;
+
+      let remaining = trackIds.filter((id) => !playedIds.has(id));
+      if (remaining.length === 0) {
+        setPlayedIds(new Set());
+        remaining = trackIds;
+      }
+
+      const choiceId =
+        remaining[Math.floor(Math.random() * remaining.length)];
+      const choice = allTracks.find((t) => t.id === choiceId);
+      if (!choice) return;
+
+      setPlayedIds((prev) => new Set(prev).add(choiceId));
+      playTrack(choice);
+    },
+    [playTrack, playedIds]
+  );
+
   const value = useMemo(
     () => ({
       current,
@@ -127,6 +155,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
       setVolume,
       seek,
       playTrack,
+      playRandom,
     }),
     [
       current,
@@ -140,6 +169,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
       setVolume,
       seek,
       playTrack,
+      playRandom,
     ]
   );
 
