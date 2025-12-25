@@ -6,6 +6,7 @@ export default function PlayerAudio() {
   const src = usePlayerStore((s) => s.src);
   const volume = usePlayerStore((s) => s.volume);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const seekTime = usePlayerStore((s) => s.seekTime);
   const onEnded = usePlayerStore((s) => s._onEnded);
   const onTime = usePlayerStore((s) => s._onTime);
   const onCanPlay = usePlayerStore((s) => s._onCanPlay);
@@ -89,6 +90,13 @@ export default function PlayerAudio() {
     if (isPlaying) audio.play().catch(() => {});
     else audio.pause();
   }, [isPlaying, src]);
+
+  useEffect(() => {
+    const audio = audioRef.current!;
+    if (!audio || seekTime === null) return;
+    audio.currentTime = Math.max(0, Math.min(audio.duration || 0, seekTime));
+    usePlayerStore.setState({ seekTime: null, currentTime: seekTime });
+  }, [seekTime]);
 
   return null;
 }

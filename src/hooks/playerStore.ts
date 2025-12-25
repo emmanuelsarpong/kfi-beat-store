@@ -1,4 +1,5 @@
 import create from "zustand";
+import { allSongs } from "@/data/allSongs";
 
 type State = {
   // accessors
@@ -6,18 +7,25 @@ type State = {
   id: string | null;
   title: string | null;
   src: string | null;
+  coverImage: string | null;
   isPlaying: boolean;
   volume: number;
   queue: string[];
   progressById: Record<string, number>;
   duration: number;
   currentTime: number;
+  seekTime: number | null;
   // internal callbacks wired by PlayerAudio
   _onEnded: (idAtEvent: string | null) => void;
   _onTime: (t: number, d: number) => void;
   _onCanPlay: () => void;
   // public API
-  playById: (id: string, url: string, title?: string) => void;
+  playById: (
+    id: string,
+    url: string,
+    title?: string,
+    coverImage?: string
+  ) => void;
   pause: () => void;
   next: () => void;
   setVolume: (v: number) => void;
@@ -28,17 +36,33 @@ type State = {
 let playToken = 0;
 export const getPlayToken = () => playToken;
 
+function resolveUrl(id: string) {
+  // Look up the actual URL from allSongs
+  const song = allSongs.find((s) => s.id === id);
+  if (song) return song.audioUrl;
+  // Fallback resolver: map id to known catalog, or return a sensible path.
+  return `/audio/${id}.mp3`;
+}
+
+function resolveTitle(id: string) {
+  // Look up the title from allSongs
+  const song = allSongs.find((s) => s.id === id);
+  return song?.title ?? null;
+}
+
 export const usePlayerStore = create<State>((set, get) => ({
   currentId: () => get().id,
   id: null,
   title: null,
   src: null,
+  coverImage: null,
   isPlaying: false,
   volume: 0.9,
   queue: [],
   progressById: {},
   duration: 0,
   currentTime: 0,
+  seekTime: null,
   _onEnded: (idAtEvent) => {
     if (idAtEvent !== get().id) return;
     get().next();
@@ -58,31 +82,37 @@ export const usePlayerStore = create<State>((set, get) => ({
     set({ currentTime: t, duration: d });
   },
   _onCanPlay: () => set({ isPlaying: true }),
-  playById: (id, url, title) => {
+  playById: (id, url, title, coverImage) => {
     playToken++;
-    set({ id, src: url, title: title ?? null, isPlaying: true });
+    set({
+      id,
+      src: url,
+      title: title ?? null,
+      coverImage: coverImage ?? null,
+      isPlaying: true,
+    });
   },
   pause: () => set({ isPlaying: false }),
   next: () => {
     const { queue } = get();
-    if (!queue.length) return set({ isPlaying: false });
+    if (!queue.length) {
+      // No queue, just stop playback
+      set({ isPlaying: false });
+      return;
+    }
     const [nextId, ...rest] = queue;
     const nextUrl = resolveUrl(nextId);
+    const nextTitle = resolveTitle(nextId);
     playToken++;
     set({
       id: nextId,
       src: nextUrl,
-      title: null,
+      title: nextTitle,
       queue: rest,
       isPlaying: true,
     });
   },
   setVolume: (v) => set({ volume: Math.max(0, Math.min(1, v)) }),
-  seek: (t) => set({ currentTime: t }),
+  seek: (t) => set({ seekTime: t }),
   setQueue: (q) => set({ queue: q }),
 }));
-
-function resolveUrl(id: string) {
-  // Fallback resolver: map id to known catalog, or return a sensible path.
-  return `/audio/${id}.mp3`;
-}
