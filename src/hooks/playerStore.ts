@@ -24,10 +24,11 @@ type State = {
     id: string,
     url: string,
     title?: string,
-    coverImage?: string
+    coverImage?: string,
   ) => void;
   pause: () => void;
   next: () => void;
+  previous: () => void;
   setVolume: (v: number) => void;
   seek: (t: number) => void;
   setQueue: (q: string[]) => void;
@@ -109,6 +110,22 @@ export const usePlayerStore = create<State>((set, get) => ({
       src: nextUrl,
       title: nextTitle,
       queue: rest,
+      isPlaying: true,
+    });
+  },
+  previous: () => {
+    // To support previous, we need to keep a history. For now, just restart the current song.
+    // Optionally, you could implement a history stack for true previous track support.
+    const { id } = get();
+    if (!id) return;
+    const url = resolveUrl(id);
+    const title = resolveTitle(id);
+    playToken++;
+    set({
+      src: url,
+      title: title,
+      currentTime: 0,
+      seekTime: 0,
       isPlaying: true,
     });
   },

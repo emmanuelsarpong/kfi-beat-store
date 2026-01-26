@@ -25,6 +25,7 @@ export const usePlayer = () => {
   const seek = usePlayerStore((s) => s.seek);
   const next = usePlayerStore((s) => s.next);
   const setQueue = usePlayerStore((s) => s.setQueue);
+  const previous = usePlayerStore((s) => s.previous);
 
   const playTrack = useCallback(
     (t: {
@@ -36,7 +37,7 @@ export const usePlayer = () => {
       if (t.id) playById(t.id, t.audioUrl, t.title, t.coverImage);
       else playById("", t.audioUrl, t.title, t.coverImage);
     },
-    [playById]
+    [playById],
   );
 
   const play = useCallback(() => {
@@ -71,7 +72,7 @@ export const usePlayer = () => {
       setQueue(rest.map((s) => s.id));
       playById(first.id, first.audioUrl, first.title);
     },
-    [playById, setQueue]
+    [playById, setQueue],
   );
 
   return {
@@ -88,5 +89,6 @@ export const usePlayer = () => {
     playTrack,
     playRandom,
     next,
+    previous,
   } as const;
 };

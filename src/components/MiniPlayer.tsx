@@ -34,18 +34,10 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ mode = "floating" }) => {
     volume,
     setVolume,
     next,
+    previous,
   } = usePlayer();
 
-  const jump = React.useCallback(
-    (delta: number) => {
-      const nextTime = Math.min(
-        Math.max(currentTime + delta, 0),
-        duration || 0
-      );
-      seek(nextTime);
-    },
-    [currentTime, duration, seek]
-  );
+  // Remove jump for previous/next, use previous for previous track
 
   const containerClass =
     mode === "floating"
@@ -128,15 +120,19 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ mode = "floating" }) => {
               <Shuffle className="w-3.5 h-3.5" />
             </button>
             <button
-              onClick={() => jump(-10)}
+              onClick={() => previous()}
               className="w-8 h-8 rounded-full bg-white/5 text-white flex items-center justify-center hover:bg-white/15 border border-white/10"
-              aria-label="Rewind 10 seconds"
-              title="Rewind 10s"
+              aria-label="Previous Track"
+              title="Previous Track"
             >
               <SkipBack className="w-3.5 h-3.5" />
             </button>
             <button
-              onClick={() => (current ? toggle() : playRandom())}
+              onClick={() => {
+                if (!current) playRandom();
+                else if (!isPlaying) toggle();
+                else toggle();
+              }}
               className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform shadow-md"
               aria-label={isPlaying ? "Pause" : "Play"}
             >
