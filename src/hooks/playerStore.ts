@@ -1,5 +1,6 @@
 import create from "zustand";
 import { allSongs } from "@/data/allSongs";
+import { beats } from "@/data/beats";
 
 type State = {
   // accessors
@@ -51,6 +52,11 @@ function resolveTitle(id: string) {
   return song?.title ?? null;
 }
 
+function resolveCoverImage(id: string) {
+  const beat = beats.find((b) => b.id === id);
+  return beat?.coverImage ?? null;
+}
+
 export const usePlayerStore = create<State>((set, get) => ({
   currentId: () => get().id,
   id: null,
@@ -66,6 +72,11 @@ export const usePlayerStore = create<State>((set, get) => ({
   seekTime: null,
   _onEnded: (idAtEvent) => {
     if (idAtEvent !== get().id) return;
+    // Only auto-advance when a queue exists (e.g. shuffle/playlist).
+    if (!get().queue.length) {
+      set({ isPlaying: false });
+      return;
+    }
     get().next();
   },
   _onTime: (t, d) => {
@@ -95,21 +106,41 @@ export const usePlayerStore = create<State>((set, get) => ({
   },
   pause: () => set({ isPlaying: false }),
   next: () => {
-    const { queue } = get();
-    if (!queue.length) {
-      // No queue, just stop playback
-      set({ isPlaying: false });
+    const { queue, id: currentId } = get();
+
+    // 1) If we have an explicit queue, consume it.
+    if (queue.length) {
+      const [nextId, ...rest] = queue;
+      const nextUrl = resolveUrl(nextId);
+      const nextTitle = resolveTitle(nextId);
+      const nextCoverImage = resolveCoverImage(nextId);
+      playToken++;
+      set({
+        id: nextId,
+        src: nextUrl,
+        title: nextTitle,
+        coverImage: nextCoverImage,
+        queue: rest,
+        isPlaying: true,
+      });
       return;
     }
-    const [nextId, ...rest] = queue;
-    const nextUrl = resolveUrl(nextId);
-    const nextTitle = resolveTitle(nextId);
+
+    // 2) No queue: fall back to the next track in the catalog.
+    if (!allSongs.length) return;
+
+    const currentIndex = currentId
+      ? allSongs.findIndex((s) => s.id === currentId)
+      : -1;
+    const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % allSongs.length : 0;
+    const nextSong = allSongs[nextIndex];
+
     playToken++;
     set({
-      id: nextId,
-      src: nextUrl,
-      title: nextTitle,
-      queue: rest,
+      id: nextSong.id,
+      src: nextSong.audioUrl,
+      title: nextSong.title ?? null,
+      coverImage: resolveCoverImage(nextSong.id),
       isPlaying: true,
     });
   },
