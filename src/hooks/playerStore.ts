@@ -132,7 +132,8 @@ export const usePlayerStore = create<State>((set, get) => ({
     const currentIndex = currentId
       ? allSongs.findIndex((s) => s.id === currentId)
       : -1;
-    const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % allSongs.length : 0;
+    const nextIndex =
+      currentIndex >= 0 ? (currentIndex + 1) % allSongs.length : 0;
     const nextSong = allSongs[nextIndex];
 
     playToken++;
