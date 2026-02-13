@@ -660,6 +660,7 @@ app.post("/api/checkout/create", checkoutLimiter, async (req, res) => {
         1: STRIPE_PRICE_ID_LUCID,
         sunset: process.env.STRIPE_PRICE_ID_SUNSET,
         29: process.env.STRIPE_PRICE_ID_29,
+        "35": process.env.STRIPE_PRICE_ID_35, // Cloudy Days
       };
       let val = map[id];
       if (!val) {
