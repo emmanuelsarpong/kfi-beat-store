@@ -25,7 +25,7 @@ export type KeyFilterValue = {
 };
 
 export function keyMatches(filter: KeyFilterValue, beatKey?: string): boolean {
-  if (!filter.note || !filter.quality) return true;
+  if (!filter.note) return true;
   const n = normalizeKey(beatKey);
   if (!n) return false;
   const enharm: Record<string, string> = {
@@ -36,5 +36,7 @@ export function keyMatches(filter: KeyFilterValue, beatKey?: string): boolean {
     Bb: "A#",
   };
   const note = enharm[filter.note] || filter.note;
-  return n.note === note && n.quality === filter.quality;
+  if (n.note !== note) return false;
+  if (!filter.quality) return true;
+  return n.quality === filter.quality;
 }

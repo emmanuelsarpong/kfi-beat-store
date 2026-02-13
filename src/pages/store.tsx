@@ -71,7 +71,7 @@ const Store = () => {
           {/* Subtle gradient divider for visual separation */}
           <div className="mx-auto h-px w-full max-w-3xl bg-gradient-to-r from-transparent via-zinc-700/60 to-transparent mb-12" />
           {/* Controls row: Search, Genre, Key, BPM on one line (desktop). On phones: Search, Genre full-width; Key/BPM 50/50. */}
-          <div className="reveal z-20 mb-10">
+          <div className="reveal relative z-[100] mb-10">
             <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-3 sm:gap-4">
               {/* Search */}
               <input

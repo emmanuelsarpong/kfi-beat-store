@@ -21,6 +21,18 @@ const VITE_SERVER_URL: string | undefined =
     : undefined;
 
 export const beats: BeatData[] = [
+  // Newest: Cloudy Days
+  {
+    id: "35",
+    title: "Cloudy Days",
+    genre: "Boom Bap",
+    bpm: 85,
+    mood: "Heartfelt",
+    key: "F min",
+    price: 375.0,
+    audioUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/cloudy%20days/Cloudy%20Days.mp3",
+  },
   // Newest: Gravity
   {
     id: "34",

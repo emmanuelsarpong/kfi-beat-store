@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Play, Pause, ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,9 +28,28 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
   const { current, isPlaying, playTrack, toggle } = usePlayer();
   const { isFavorite, toggle: toggleFav } = useFavorites();
   const [hovering, setHovering] = useState(false);
+  const [showKeyPill, setShowKeyPill] = useState(true);
   const previewRef = useRef<HTMLAudioElement>(null);
+  const pillsRef = useRef<HTMLDivElement>(null);
   // Use stable id comparison instead of audioUrl (which may be a resolved/signed URL)
   const isCurrent = current?.id === beat.id;
+
+  // Reset key pill visibility when beat changes so we re-measure
+  useLayoutEffect(() => {
+    if (beat.key) setShowKeyPill(true);
+  }, [beat.id, beat.key, beat.genre, beat.bpm, beat.mood]);
+
+  // Hide Key pill when genre + BPM + mood + key overflow to a second line (Key filtering still works)
+  useLayoutEffect(() => {
+    if (!beat.key || !showKeyPill) return;
+    const el = pillsRef.current;
+    if (!el) return;
+    const children = el.querySelectorAll("[data-pill]");
+    if (children.length < 2) return;
+    const first = children[0].getBoundingClientRect().top;
+    const last = children[children.length - 1].getBoundingClientRect().top;
+    setShowKeyPill(first === last);
+  }, [beat.id, beat.key, beat.genre, beat.bpm, beat.mood, showKeyPill]);
 
   // Neon color class mapping by genre (fallback slate)
   // Case-insensitive mapping; normalize RnB / rnb to same style
@@ -237,10 +256,11 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
                   </div>
                 );
               })()}
-              <div className="flex flex-wrap items-center gap-2 mt-3">
+              <div ref={pillsRef} className="flex flex-wrap items-center gap-2 mt-3">
                 {/* Genre neon pill */}
                 <button
                   type="button"
+                  data-pill
                   className={`neon-pill pill-anim pill-enter pill-delay-1 ${genreClass}`}
                   aria-label={`Filter by ${beat.genre}`}
                 >
@@ -249,6 +269,7 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
                 {/* BPM pill */}
                 <button
                   type="button"
+                  data-pill
                   className="neon-pill pill-anim pill-enter pill-delay-2 np-cyan"
                   aria-label={`Filter by ${beat.bpm} BPM`}
                 >
@@ -257,14 +278,16 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
                 {/* Mood pill */}
                 <button
                   type="button"
+                  data-pill
                   className="neon-pill pill-anim pill-enter pill-delay-3 np-purple"
                   aria-label={`Filter by ${beat.mood}`}
                 >
                   {beat.mood}
                 </button>
-                {beat.key && (
+                {beat.key && showKeyPill && (
                   <button
                     type="button"
+                    data-pill
                     className="neon-pill pill-anim pill-enter pill-delay-4 np-emerald"
                     aria-label={`Filter by key ${beat.key}`}
                   >
