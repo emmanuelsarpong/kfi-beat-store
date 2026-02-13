@@ -55,8 +55,7 @@ const HeroSection = () => {
         loop
         muted
         playsInline
-        preload="metadata"
-        poster="/placeholder.svg"
+        preload="auto"
         className="absolute inset-0 w-full h-full object-cover opacity-70"
       />
       {/* Faint #0B0F1A overlay to match contact form */}
