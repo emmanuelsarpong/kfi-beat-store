@@ -40,16 +40,41 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
   }, [beat.id, beat.key, beat.genre, beat.bpm, beat.mood]);
 
   // Hide Key pill when genre + BPM + mood + key overflow to a second line (Key filtering still works)
+  // Also re-measure on resize so mobile layouts keep at most 3 visible pills.
   useLayoutEffect(() => {
-    if (!beat.key || !showKeyPill) return;
+    if (!beat.key) return;
     const el = pillsRef.current;
     if (!el) return;
-    const children = el.querySelectorAll("[data-pill]");
-    if (children.length < 2) return;
-    const first = children[0].getBoundingClientRect().top;
-    const last = children[children.length - 1].getBoundingClientRect().top;
-    setShowKeyPill(first === last);
-  }, [beat.id, beat.key, beat.genre, beat.bpm, beat.mood, showKeyPill]);
+
+    const measure = () => {
+      const children = el.querySelectorAll("[data-pill]");
+      if (children.length < 2) return;
+      const first = children[0].getBoundingClientRect().top;
+      const last = children[children.length - 1].getBoundingClientRect().top;
+      const shouldShow = first === last;
+      setShowKeyPill((prev) => (prev === shouldShow ? prev : shouldShow));
+    };
+
+    measure();
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        measure();
+      });
+      resizeObserver.observe(el);
+    } else {
+      window.addEventListener("resize", measure);
+    }
+
+    return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      } else {
+        window.removeEventListener("resize", measure);
+      }
+    };
+  }, [beat.id, beat.key, beat.genre, beat.bpm, beat.mood]);
 
   // Neon color class mapping by genre (fallback slate)
   // Case-insensitive mapping; normalize RnB / rnb to same style

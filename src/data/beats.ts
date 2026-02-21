@@ -25,7 +25,7 @@ export const beats: BeatData[] = [
   {
     id: "36",
     title: "Crown",
-    genre: "Melodic Rap / Alt RnB",
+    genre: "Melodic Trap",
     bpm: 120,
     mood: "Introspective",
     price: 350.0,
