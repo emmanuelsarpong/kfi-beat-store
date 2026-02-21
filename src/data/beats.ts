@@ -21,6 +21,17 @@ const VITE_SERVER_URL: string | undefined =
     : undefined;
 
 export const beats: BeatData[] = [
+  // Newest: Crown
+  {
+    id: "36",
+    title: "Crown",
+    genre: "Melodic Rap / Alt RnB",
+    bpm: 120,
+    mood: "Introspective",
+    price: 350.0,
+    audioUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/crown/Crown.mp3",
+  },
   // Newest: Cloudy Days
   {
     id: "35",
