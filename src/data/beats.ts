@@ -9,6 +9,8 @@ export interface BeatData {
   price: number;
   audioUrl: string;
   coverImage?: string;
+  // Optional: force a specific gradient variant (1..N). If omitted, color is derived from id.
+  coverVariant?: number;
   paymentLink?: string;
 }
 
@@ -21,6 +23,19 @@ const VITE_SERVER_URL: string | undefined =
     : undefined;
 
 export const beats: BeatData[] = [
+  // Newest: DND
+  {
+    id: "37",
+    title: "DND",
+    genre: "RnB",
+    bpm: 71,
+    mood: "Smooth Chill",
+    key: "E min",
+    price: 400.0,
+    coverVariant: 4,
+    audioUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/dnd/DND.mp3",
+  },
   // Newest: Crown
   {
     id: "36",

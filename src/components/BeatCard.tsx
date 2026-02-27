@@ -17,6 +17,7 @@ interface Beat {
   price: number;
   audioUrl: string;
   coverImage?: string;
+  coverVariant?: number;
   paymentLink?: string;
 }
 
@@ -194,11 +195,18 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
             // Deterministic gradient pick based on id numeric fallback to hash.
             const num = parseInt(beat.id, 10);
             const paletteCount = 20; // defined in index.css
-            const idx = isNaN(num)
-              ? Math.abs(
-                  Array.from(beat.id).reduce((a, c) => a + c.charCodeAt(0), 0)
-                ) % paletteCount
-              : (num - 1) % paletteCount;
+            const forced = Number(beat.coverVariant);
+            const idx =
+              Number.isFinite(forced) && forced > 0
+                ? (Math.floor(forced) - 1) % paletteCount
+                : isNaN(num)
+                  ? Math.abs(
+                      Array.from(beat.id).reduce(
+                        (a, c) => a + c.charCodeAt(0),
+                        0
+                      )
+                    ) % paletteCount
+                  : (num - 1) % paletteCount;
             const gradClass = `grad-beat-${idx + 1}`;
             return (
               <div
