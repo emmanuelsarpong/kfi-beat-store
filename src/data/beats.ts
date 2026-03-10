@@ -23,6 +23,17 @@ const VITE_SERVER_URL: string | undefined =
     : undefined;
 
 export const beats: BeatData[] = [
+  // Newest: Give Me Love
+  {
+    id: "38",
+    title: "Give Me Love",
+    genre: "Afrobeat",
+    bpm: 77,
+    mood: "Summer",
+    price: 400.0,
+    audioUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/give%20me%20love/Give%20Me%20Love.mp3",
+  },
   // Newest: DND
   {
     id: "37",
