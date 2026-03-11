@@ -30,6 +30,7 @@ export const beats: BeatData[] = [
     genre: "Afrobeat",
     bpm: 77,
     mood: "Summer",
+    key: "C min",
     price: 400.0,
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/give%20me%20love/Give%20Me%20Love.mp3",
