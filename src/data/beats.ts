@@ -39,7 +39,7 @@ export const beats: BeatData[] = [
   {
     id: "38",
     title: "Give Me Love",
-    genre: "Afrobeat",
+    genre: "Afrobeats",
     bpm: 77,
     mood: "Summer",
     key: "C min",
