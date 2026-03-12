@@ -23,6 +23,18 @@ const VITE_SERVER_URL: string | undefined =
     : undefined;
 
 export const beats: BeatData[] = [
+  // Newest: Sunrise
+  {
+    id: "39",
+    title: "Sunrise",
+    genre: "Afrobeats",
+    bpm: 98,
+    mood: "Summer",
+    key: "D min",
+    price: 400.0,
+    audioUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/sunrise/Sunrise.mp3",
+  },
   // Newest: Give Me Love
   {
     id: "38",
