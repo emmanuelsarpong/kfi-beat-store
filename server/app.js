@@ -693,8 +693,7 @@ app.post("/api/checkout/create", checkoutLimiter, async (req, res) => {
       return res
         .status(400)
         .json({ error: "No Stripe Price configured for this beat." });
-    const sessionCreate = {
-      mode: "payment",
+    const baseSessionCreate = {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${returnUrl}/download?session_id={CHECKOUT_SESSION_ID}&beat=${encodeURIComponent(
         String(beatId)
@@ -705,9 +704,37 @@ app.post("/api/checkout/create", checkoutLimiter, async (req, res) => {
       allow_promotion_codes: true,
     };
     if (promotionCode && typeof promotionCode === "string") {
-      sessionCreate.discounts = [{ promotion_code: promotionCode }];
+      baseSessionCreate.discounts = [{ promotion_code: promotionCode }];
     }
-    const session = await stripe.checkout.sessions.create(sessionCreate);
+
+    // Some beats may use recurring (subscription) prices (e.g., leases). Stripe
+    // requires mode="subscription" for recurring prices, and mode="payment" for one-time.
+    let mode = "payment";
+    try {
+      const p = await stripe.prices.retrieve(priceId);
+      if (p?.recurring) mode = "subscription";
+    } catch {
+      // If price lookup fails, we'll attempt payment first and fall back below.
+    }
+
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        ...baseSessionCreate,
+        mode,
+      });
+    } catch (e) {
+      // Fallback: if we guessed wrong, retry with subscription mode.
+      const msg = String(e?.message || "");
+      const shouldRetrySubscription =
+        mode !== "subscription" &&
+        /recurring|subscription|mode/i.test(msg);
+      if (!shouldRetrySubscription) throw e;
+      session = await stripe.checkout.sessions.create({
+        ...baseSessionCreate,
+        mode: "subscription",
+      });
+    }
     return res.json({ id: session.id, url: session.url });
   } catch (err) {
     console.error("[checkout] error", err);

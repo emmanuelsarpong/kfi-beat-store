@@ -55,7 +55,7 @@ export const beats: BeatData[] = [
     bpm: 71,
     mood: "Smooth Chill",
     key: "E min",
-    price: 400.0,
+    price: 35.0,
     coverVariant: 4,
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/dnd/DND.mp3",
