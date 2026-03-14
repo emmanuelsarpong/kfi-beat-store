@@ -22,6 +22,12 @@ import Stripe from "stripe";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import {
+  ensureBeatRow,
+  ensureAllStoreBeats,
+  isStoreBeatId,
+  STORE_BEATS,
+} from "./beatsStore.js";
 
 export const app = express();
 
@@ -42,6 +48,10 @@ app.use(corsPolicy());
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const STRIPE_PRICE_ID_LUCID = process.env.STRIPE_PRICE_ID_LUCID;
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+// Generic lease prices via Stripe Price IDs (shared across beats)
+const STRIPE_PRICE_STARTER = process.env.STRIPE_PRICE_STARTER;
+const STRIPE_PRICE_PREMIUM = process.env.STRIPE_PRICE_PREMIUM;
+const STRIPE_PRICE_UNLIMITED = process.env.STRIPE_PRICE_UNLIMITED;
 const stripe = STRIPE_SECRET_KEY
   ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2024-06-20" })
   : null;
@@ -60,6 +70,7 @@ const supabase =
     ? createClient(SUPABASE_URL, SUPABASE_KEY)
     : null;
 const BUCKET = "beats";
+const PURCHASES_TABLE = "purchases";
 const SENT_SESSIONS = new Set();
 
 async function listSignedFiles(prefix = "", expiresSec = 60 * 60) {
@@ -100,10 +111,133 @@ async function listSignedFiles(prefix = "", expiresSec = 60 * 60) {
   return all;
 }
 
-// Only allow certain file types in customer-facing downloads
+/**
+ * Lightweight check: does this beat folder have stems available?
+ * We assume stems live under "<folder>/stems" or as "Stems.zip".
+ * Tries the folder as-is, then with spaces replaced by hyphens (e.g. "give me love" -> "give-me-love").
+ * @param {string} folder - folder name (e.g. "sunrise")
+ * @param {{ beatId?: string, title?: string, debug?: boolean }} opts - optional; when debug true, logs list/exists results
+ */
+async function hasStemsForFolder(folder, opts = {}) {
+  if (!supabase) return false;
+  const base = String(folder || "").trim();
+  if (!base) return false;
+  const folderVariants = [
+    base,
+    base.replace(/\s+/g, "-"),
+  ].filter((v, i, a) => a.indexOf(v) === i);
+
+  const debug = opts.debug === true;
+  for (const variant of folderVariants) {
+    const found = await hasStemsInFolder(variant, { debug, ...opts });
+    if (found) return true;
+  }
+  if (debug) {
+    console.log("[availability] beat=" + (opts.beatId ?? "?") + " title=" + (opts.title ?? "?") + " folder=" + folder + " hasStems=false");
+  }
+  return false;
+}
+
+function itemIsStemsZip(item) {
+  const name = String(item?.name ?? "").toLowerCase();
+  return name === "stems.zip" || name.endsWith("/stems.zip");
+}
+
+/**
+ * @param {string} base - folder path
+ * @param {{ debug?: boolean, beatId?: string, title?: string }} opts
+ */
+async function hasStemsInFolder(base, opts = {}) {
+  const baseClean = base.replace(/\/+$/, "");
+  const stemsZipPath = `${baseClean}/Stems.zip`;
+  const stemsPrefix = `${baseClean}/stems`;
+  const debug = opts.debug === true;
+
+  try {
+    const { data: stemsEntries, error: stemsErr } = await supabase.storage
+      .from(BUCKET)
+      .list(stemsPrefix, { limit: 1 });
+    if (!stemsErr && Array.isArray(stemsEntries) && stemsEntries.length > 0) {
+      if (debug) console.log("[availability] folder=" + baseClean + " list(stems/)=ok count=" + stemsEntries.length + " exists=skip hasStems=true");
+      return true;
+    }
+  } catch (_) {}
+
+  let listErr = null;
+  let listCount = 0;
+  let listFoundStems = false;
+  try {
+    const { data: rootEntries, error: rootErr } = await supabase.storage
+      .from(BUCKET)
+      .list(baseClean, { limit: 50 });
+    listErr = rootErr ? (rootErr.message || String(rootErr)) : null;
+    listCount = Array.isArray(rootEntries) ? rootEntries.length : 0;
+    listFoundStems = !rootErr && Array.isArray(rootEntries) && rootEntries.some(itemIsStemsZip);
+    if (listFoundStems) {
+      if (debug) console.log("[availability] folder=" + baseClean + " list()=ok count=" + listCount + " foundStemsZip=true exists=skip hasStems=true");
+      return true;
+    }
+    if (rootErr) {
+      console.warn("[stems] storage list failed for folder:", baseClean, rootErr.message || rootErr);
+    }
+  } catch (e) {
+    listErr = e?.message || String(e);
+    console.warn("[stems] storage list threw for folder:", baseClean, e?.message || e);
+  }
+
+  let existsResult = false;
+  try {
+    const { data: exists } = await supabase.storage.from(BUCKET).exists(stemsZipPath);
+    existsResult = exists === true;
+    if (existsResult) {
+      if (debug) console.log("[availability] folder=" + baseClean + " list()=" + (listErr || "ok") + " count=" + listCount + " exists(" + stemsZipPath + ")=true hasStems=true");
+      return true;
+    }
+  } catch (_) {}
+  if (debug) {
+    console.log("[availability] folder=" + baseClean + " list()=" + (listErr || "ok") + " count=" + listCount + " exists(" + stemsZipPath + ")=" + existsResult + " hasStems=false");
+  }
+  return false;
+}
+
+// Only allow certain file types in customer-facing downloads (blocks preview MP3)
 function isAllowedDownload(name) {
   const n = String(name || "").toLowerCase();
   return n.endsWith(".wav") || n.endsWith(".zip");
+}
+
+/**
+ * License-aware file selection for fulfillment.
+ * Used by both webhook email and GET /api/downloads so email and success page always match.
+ * @param {Array<{ name: string, path?: string, url?: string }>} files - result of listSignedFiles (or similar)
+ * @param {string} licenseType - "starter" | "premium" | "unlimited" | "exclusive"
+ * @returns {Array} filtered list allowed for that license. Preview MP3 is never included.
+ */
+function selectDeliverableFiles(files, licenseType) {
+  const raw = Array.isArray(files) ? files : [];
+  const lt = String(licenseType || "").toLowerCase();
+  const isWavOnly = lt === "starter" || lt === "premium";
+
+  return raw.filter((f) => {
+    if (!f || !f.name) return false;
+    const name = String(f.name).toLowerCase();
+    const path = String(f.path ?? "").toLowerCase();
+    // Preview MP3 must never be delivered
+    if (name.endsWith(".mp3")) return false;
+    // WAV: include for all tiers; for starter/premium exclude files under stems/ (master WAV only)
+    if (name.endsWith(".wav")) {
+      if (isWavOnly && path.includes("/stems/")) return false;
+      return true;
+    }
+    // ZIP: starter/premium get no zip; unlimited/exclusive get stems-related zip only
+    if (name.endsWith(".zip")) {
+      if (isWavOnly) return false;
+      return name === "stems.zip" || path.includes("/stems/");
+    }
+    // Other types (e.g. under stems/): only for unlimited/exclusive
+    if (isWavOnly) return false;
+    return path.includes("/stems/");
+  });
 }
 
 // Email (Resend only)
@@ -406,8 +540,12 @@ app.post(
       ) {
         const session = event.data.object;
         let email = session?.customer_details?.email || session?.customer_email;
+        const meta = session?.metadata || {};
+        const licenseType = meta.license_type || null;
         const beatIdMeta =
-          session?.metadata?.beat || session?.client_reference_id;
+          meta.beat_id ||
+          meta.beat ||
+          session?.client_reference_id;
         const full = await stripe.checkout.sessions.retrieve(session.id, {
           expand: ["line_items.data.price.product"],
         });
@@ -429,6 +567,52 @@ app.post(
         const folder = productName
           ? slugifyTitleToFolder(productName)
           : beatKey;
+        // Persist purchase record (idempotent)
+        try {
+          if (supabase && PURCHASES_TABLE) {
+            const amountTotal =
+              session?.amount_total ??
+              full?.amount_total ??
+              (typeof price?.unit_amount === "number"
+                ? price.unit_amount
+                : null);
+            const currency =
+              session?.currency ||
+              full?.currency ||
+              price?.currency ||
+              "usd";
+            const paymentIntentId =
+              typeof session?.payment_intent === "string"
+                ? session.payment_intent
+                : session?.payment_intent?.id || null;
+            const { error: upsertErr } = await supabase
+              .from(PURCHASES_TABLE)
+              .upsert(
+                {
+                  stripe_checkout_session_id: session.id,
+                  stripe_payment_intent_id: paymentIntentId,
+                  buyer_email: email || null,
+                  beat_id: beatKey || beatIdMeta || null,
+                  beat_title_snapshot: meta.beat_title || productName || null,
+                  license_type: licenseType,
+                  amount_total: amountTotal,
+                  currency,
+                  payment_status: session?.payment_status || session?.status,
+                  raw_metadata: meta,
+                  stripe_price_id: priceId || null,
+                  stripe_product_id: productId || null,
+                  product_name_snapshot: productName || null,
+                },
+                { onConflict: "stripe_checkout_session_id" }
+              );
+            if (upsertErr) {
+              console.error("[webhook] failed to upsert purchase", upsertErr);
+            }
+          }
+        } catch (e) {
+          console.error("[webhook] purchase persistence error", e);
+        }
+
         let files = [];
         try {
           if (folder) files = await listSignedFiles(folder, 60 * 60 * 24);
@@ -446,8 +630,6 @@ app.post(
           if (beatKey && beatKey !== folder) {
             try {
               files = await listSignedFiles(beatKey, 60 * 60 * 24);
-              // Filter out disallowed file types (e.g., exclude .mp3)
-              files = files.filter((f) => isAllowedDownload(f?.name));
             } catch (e2) {
               console.error(
                 "[webhook] fallback sign failed for",
@@ -457,6 +639,9 @@ app.post(
             }
           }
         }
+        // Block preview MP3; then apply license-aware file selection
+        files = files.filter((f) => isAllowedDownload(f?.name));
+        files = selectDeliverableFiles(files, licenseType || "starter");
         if (!email) {
           console.warn(
             "[webhook] no customer email present for session",
@@ -474,22 +659,105 @@ app.post(
             SENT_SESSIONS.add(session.id);
           } catch {}
         }
-        // best-effort mark sold
+        // Update beat availability: lease => exclusive_available false (never touch sold); exclusive => sold + exclusive_available (only when not already sold).
         try {
           if (supabase) {
-            if (beatKey) {
-              await supabase
-                .from("beats")
-                .update({ sold: true, sold_at: new Date().toISOString() })
-                .eq("id", beatKey);
-            } else if (productName) {
-              await supabase
-                .from("beats")
-                .update({ sold: true, sold_at: new Date().toISOString() })
-                .ilike("title", productName);
+            const isLease =
+              licenseType === "starter" ||
+              licenseType === "premium" ||
+              licenseType === "unlimited";
+            const isExclusive = licenseType === "exclusive";
+            const nowIso = new Date().toISOString();
+
+            if (isLease) {
+              if (beatKey) {
+                const { data: row } = await supabase
+                  .from("beats")
+                  .select("sold, exclusive_available, first_lease_at")
+                  .eq("id", beatKey)
+                  .maybeSingle();
+                if (row && row.sold) {
+                  console.info("[webhook] lease ignored, beat already sold beatId=", beatKey);
+                } else if (row && (row.exclusive_available === false && row.first_lease_at)) {
+                  // Already updated by a prior lease; idempotent no-op
+                } else if (row) {
+                  await supabase
+                    .from("beats")
+                    .update({
+                      exclusive_available: false,
+                      first_lease_at: row.first_lease_at || nowIso,
+                    })
+                    .eq("id", beatKey);
+                }
+              } else if (productName) {
+                const { data: rows } = await supabase
+                  .from("beats")
+                  .select("id, sold, exclusive_available, first_lease_at")
+                  .ilike("title", productName)
+                  .limit(1);
+                const row = rows?.[0];
+                if (row && row.sold) {
+                  console.info("[webhook] lease ignored, beat already sold title=", productName);
+                } else if (row && (row.exclusive_available === false && row.first_lease_at)) {
+                } else if (row) {
+                  await supabase
+                    .from("beats")
+                    .update({
+                      exclusive_available: false,
+                      first_lease_at: row.first_lease_at || nowIso,
+                    })
+                    .eq("id", row.id);
+                }
+              }
+            } else if (isExclusive) {
+              if (beatKey) {
+                const { data: row, error: fetchErr } = await supabase
+                  .from("beats")
+                  .select("sold")
+                  .eq("id", beatKey)
+                  .maybeSingle();
+                if (fetchErr) {
+                  console.error("[webhook] sold check failed", fetchErr);
+                } else if (row && row.sold) {
+                  console.info("[webhook] exclusive replay, already sold beatId=", beatKey);
+                } else {
+                  const { error: upErr } = await supabase
+                    .from("beats")
+                    .update({
+                      sold: true,
+                      sold_at: nowIso,
+                      exclusive_available: false,
+                    })
+                    .eq("id", beatKey)
+                    .eq("sold", false);
+                  if (upErr) console.error("[webhook] exclusive update failed", upErr);
+                }
+              } else if (productName) {
+                const { data: rows } = await supabase
+                  .from("beats")
+                  .select("id, sold")
+                  .ilike("title", productName)
+                  .limit(1);
+                const row = rows?.[0];
+                if (row && row.sold) {
+                  console.info("[webhook] exclusive replay, already sold title=", productName);
+                } else if (row) {
+                  await supabase
+                    .from("beats")
+                    .update({
+                      sold: true,
+                      sold_at: nowIso,
+                      exclusive_available: false,
+                    })
+                    .eq("id", row.id)
+                    .eq("sold", false);
+                }
+              }
             }
           }
-        } catch {}
+        } catch (e) {
+          console.error("[webhook] beat availability update failed", e);
+        }
       }
     } catch (e) {
       console.error("[webhook] handler error", e);
@@ -650,10 +918,37 @@ app.post("/api/checkout/create", checkoutLimiter, async (req, res) => {
       return res.status(500).json({ error: "Stripe not configured" });
     const {
       beatId = "lucid",
+      beatTitle,
+      licenseType = "exclusive",
       returnUrl = FRONTEND_URL,
       promotionCode,
     } = req.body || {};
-    const resolvePriceId = async (id) => {
+    const allowedLicenseTypes = [
+      // New canonical license keys
+      "starter",
+      "premium",
+      "unlimited",
+      "exclusive",
+      // Backwards-compatible aliases from older frontends
+      "mp3",
+      "wav",
+    ];
+    if (!beatId || typeof beatId !== "string") {
+      return res.status(400).json({ error: "beatId is required" });
+    }
+    if (
+      !licenseType ||
+      typeof licenseType !== "string" ||
+      !allowedLicenseTypes.includes(licenseType)
+    ) {
+      return res.status(400).json({ error: "Invalid licenseType" });
+    }
+    // Normalize legacy license values to new canonical keys
+    let normalizedLicenseType = licenseType;
+    if (normalizedLicenseType === "mp3") normalizedLicenseType = "starter";
+    else if (normalizedLicenseType === "wav")
+      normalizedLicenseType = "premium";
+    const resolveExclusivePriceId = async (id) => {
       if (!id) return undefined;
       const map = {
         lucid: STRIPE_PRICE_ID_LUCID,
@@ -688,19 +983,129 @@ app.post("/api/checkout/create", checkoutLimiter, async (req, res) => {
       }
       return val;
     };
-    const priceId = await resolvePriceId(beatId);
-    if (!priceId)
-      return res
-        .status(400)
-        .json({ error: "No Stripe Price configured for this beat." });
+    // Determine Stripe price based on license type
+    let priceId;
+    if (normalizedLicenseType === "starter") {
+      priceId = STRIPE_PRICE_STARTER;
+    } else if (normalizedLicenseType === "premium") {
+      priceId = STRIPE_PRICE_PREMIUM;
+    } else if (normalizedLicenseType === "unlimited") {
+      priceId = STRIPE_PRICE_UNLIMITED;
+    } else {
+      // Some beats are lease-only (no exclusive)
+      if (String(beatId) === "37") {
+        return res
+          .status(400)
+          .json({ error: "Exclusive license not available for this beat." });
+      }
+      priceId = await resolveExclusivePriceId(beatId);
+    }
+    if (!priceId || typeof priceId !== "string") {
+      return res.status(400).json({
+          error:
+          normalizedLicenseType === "exclusive"
+            ? "No Stripe Price configured for this beat."
+            : "Requested license is temporarily unavailable.",
+      });
+    }
+    // Require beat row for availability check; backfill if missing (store beats only), then reject if still missing.
+    let existing = null;
+    if (supabase) {
+      try {
+        let { data, error: beatErr } = await supabase
+          .from("beats")
+          .select("sold, exclusive_available")
+          .eq("id", beatId)
+          .maybeSingle();
+        existing = data;
+        if (beatErr) {
+          console.error("[checkout] beat lookup failed", beatErr);
+        }
+        if (!existing && isStoreBeatId(beatId)) {
+          await ensureBeatRow(supabase, beatId, beatTitle);
+          const refetch = await supabase
+            .from("beats")
+            .select("sold, exclusive_available")
+            .eq("id", beatId)
+            .maybeSingle();
+          existing = refetch.data;
+        }
+        if (!existing) {
+          if (isStoreBeatId(beatId)) {
+            console.warn("[checkout] beat row missing after ensure beatId=", beatId);
+            return res.status(503).json({
+              error: "This beat is temporarily unavailable. Please try again shortly.",
+            });
+          }
+          return res.status(400).json({
+            error: "This beat is not available for purchase.",
+          });
+        }
+        if (existing.sold) {
+          console.info("[checkout] rejected sold beat beatId=", beatId);
+          return res.status(409).json({
+            error: "This beat has already been sold exclusively.",
+          });
+        }
+        if (normalizedLicenseType === "exclusive" && existing.exclusive_available === false) {
+          console.info("[checkout] rejected exclusive unavailable beatId=", beatId);
+          return res.status(409).json({
+            error: "This beat is no longer available for exclusive purchase.",
+          });
+        }
+      } catch (e) {
+        console.error("[checkout] beat guard error", e);
+        return res.status(503).json({
+          error: "Unable to verify beat availability. Please try again.",
+        });
+      }
+    }
+
+    // For Unlimited, ensure stems actually exist; do not silently fall back to WAV-only
+    if (normalizedLicenseType === "unlimited" && supabase) {
+      try {
+        const folderFromTitle = beatTitle
+          ? slugifyTitleToFolder(beatTitle)
+          : null;
+        const folder =
+          folderFromTitle ||
+          (typeof beatId === "string" ? String(beatId).toLowerCase() : null);
+        if (!folder) {
+          return res.status(400).json({
+            error:
+              "Unlimited License is not available for this beat (missing stems configuration).",
+          });
+        }
+        const stemsAvailable = await hasStemsForFolder(folder);
+        if (!stemsAvailable) {
+          return res.status(409).json({
+            error: "Stems are not available for this beat.",
+          });
+        }
+      } catch (e) {
+        console.error("[checkout] stems availability check failed", e);
+        return res.status(400).json({
+          error:
+            "Unlimited License is not available for this beat at the moment.",
+        });
+      }
+    }
+
+    // Inspect price for mode + snapshot
+    let priceObject = null;
     const baseSessionCreate = {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${returnUrl}/download?session_id={CHECKOUT_SESSION_ID}&beat=${encodeURIComponent(
         String(beatId)
-      )}`,
+      )}&license=${encodeURIComponent(normalizedLicenseType)}`,
       cancel_url: `${returnUrl}/`,
       client_reference_id: String(beatId),
-      metadata: { beat: String(beatId) },
+      metadata: {
+        beat: String(beatId),
+        beat_id: String(beatId),
+        beat_title: typeof beatTitle === "string" ? beatTitle : "",
+        license_type: normalizedLicenseType,
+      },
       allow_promotion_codes: true,
     };
     if (promotionCode && typeof promotionCode === "string") {
@@ -711,8 +1116,16 @@ app.post("/api/checkout/create", checkoutLimiter, async (req, res) => {
     // requires mode="subscription" for recurring prices, and mode="payment" for one-time.
     let mode = "payment";
     try {
-      const p = await stripe.prices.retrieve(priceId);
-      if (p?.recurring) mode = "subscription";
+      priceObject = await stripe.prices.retrieve(priceId);
+      if (priceObject?.recurring) mode = "subscription";
+      if (
+        licenseType === "exclusive" &&
+        priceObject &&
+        typeof priceObject.unit_amount === "number"
+      ) {
+        baseSessionCreate.metadata.exclusive_price_snapshot =
+          String(priceObject.unit_amount);
+      }
     } catch {
       // If price lookup fails, we'll attempt payment first and fall back below.
     }
@@ -760,6 +1173,8 @@ app.get("/api/downloads/:beat/:sessionId", async (req, res) => {
     const price = item?.price;
     const product = price?.product;
     const productName = typeof product === "object" ? product?.name : undefined;
+    const licenseType =
+      (session?.metadata && session.metadata.license_type) || null;
     const customerEmail =
       session?.customer_details?.email || session?.customer_email || null;
     const inferredFolder = productName
@@ -794,8 +1209,9 @@ app.get("/api/downloads/:beat/:sessionId", async (req, res) => {
           .json({ error: "Failed to generate download URLs" });
       }
     }
-    // Filter out disallowed items (exclude .mp3)
+    // Block preview MP3; then apply license-aware file selection (match webhook fulfillment)
     files = files.filter((f) => isAllowedDownload(f?.name));
+    files = selectDeliverableFiles(files, licenseType || "starter");
     if (!files || files.length === 0) {
       return res
         .status(404)
@@ -850,6 +1266,66 @@ app.get("/api/preview/:beat", async (req, res) => {
 // Health
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, frontend: FRONTEND_URL });
+});
+
+// Public: beat availability (sold, exclusive_available) for UI sync. Syncs store beats so every store beat has a row.
+app.get("/api/beat-availability", async (_req, res) => {
+  try {
+    if (!supabase)
+      return res
+        .status(500)
+        .json({ ok: false, error: "Supabase not configured" });
+    await ensureAllStoreBeats(supabase);
+    const { data: rows, error } = await supabase
+      .from("beats")
+      .select("id, sold, exclusive_available");
+    if (error) {
+      console.error("[beat-availability] query failed", error);
+      return res
+        .status(500)
+        .json({ ok: false, error: error?.message || "Query failed" });
+    }
+    const availability = {};
+    for (const row of rows || []) {
+      const id = row?.id != null ? String(row.id) : null;
+      if (id)
+        availability[id] = {
+          sold: Boolean(row.sold),
+          exclusive_available: row.exclusive_available !== false,
+        };
+    }
+    // Ensure every store beat has an entry (safe default if row still missing after sync)
+    for (const { id } of STORE_BEATS) {
+      if (availability[id] == null) {
+        availability[id] = { sold: false, exclusive_available: true };
+      }
+    }
+    // Derive hasStems from storage (Stems.zip or stems/ folder) per store beat
+    const stemsChecks = await Promise.all(
+      STORE_BEATS.map(async ({ id, title }) => {
+        const folder = slugifyTitleToFolder(title);
+        const debug = id === "39" || process.env.DEBUG_AVAILABILITY === "1";
+        const hasStems = await hasStemsForFolder(folder, { beatId: id, title, debug });
+        return { id, title, folder, hasStems };
+      })
+    );
+    for (const { id, title, folder, hasStems } of stemsChecks) {
+      availability[id] = { ...availability[id], hasStems };
+      if (id === "39" || process.env.DEBUG_AVAILABILITY === "1") {
+        console.log("[availability] beat=" + id + " title=" + title + " folder=" + folder + " hasStems=" + hasStems);
+      }
+    }
+    return res.json({
+      ok: true,
+      availability,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error("[beat-availability] error", e);
+    return res
+      .status(500)
+      .json({ ok: false, error: e?.message || String(e) });
+  }
 });
 
 // Public: expose current Stripe prices mapped to beat keys for UI sync

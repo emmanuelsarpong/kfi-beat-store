@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 type ModalProps = {
@@ -16,40 +17,48 @@ const Modal: React.FC<ModalProps> = ({ title, onClose, children }) => {
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  return (
+  // In non-browser environments, don't attempt to render the modal
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 bg-[rgba(0,0,0,0.55)] backdrop-blur-[12px]"
       role="dialog"
       aria-modal="true"
     >
-      {/* Backdrop with blur */}
+      {/* Backdrop - click to close */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0"
         onClick={onClose}
+        aria-hidden="true"
       />
 
-      {/* Panel */}
-      <div className="relative w-[min(92vw,900px)] max-h-[85vh] rounded-2xl border border-white/10 bg-zinc-950/95 shadow-2xl overflow-hidden">
+      {/* Modal container: content-sized, centered; responsive width */}
+      <div
+        className="relative z-10 w-[90vw] max-w-[520px] h-auto max-h-[85vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#050505] shadow-[0_24px_80px_rgba(0,0,0,0.9)] flex flex-col p-6 pb-8"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between bg-zinc-950/95 backdrop-blur supports-[backdrop-filter]:bg-zinc-950/80 border-b border-white/5 px-5 py-3">
-          <h2 className="text-lg md:text-xl font-semibold tracking-tight text-white">
+        <div className="flex items-center justify-between shrink-0 pb-3 border-b border-white/5">
+          <h2 className="text-xs sm:text-sm font-medium tracking-[0.18em] uppercase text-zinc-500">
             {title}
           </h2>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 hover:bg-white/10 border border-white/15 text-zinc-300 hover:text-white transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* Body (scrollable) */}
-        <div className="overflow-y-auto px-5 md:px-7 py-5 md:py-6 text-zinc-300 leading-relaxed">
+        {/* Body */}
+        <div className="text-zinc-300 leading-relaxed pt-4">
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -42,24 +42,43 @@ export function useBeats(delayMs: number = 600) {
                 ? (import.meta as unknown as { env: Record<string, string> })
                     .env.VITE_SERVER_URL
                 : undefined;
-            const isLocalEnv = /localhost|127\.0\.0\.1|^$/i.test(envServer);
-            const serverUrl = isLocalEnv ? inferredServer : envServer;
+            const origin =
+              typeof window !== "undefined" ? window.location.origin : "";
+            const isLocalEnv = /localhost|127\.0\.0\.1/i.test(origin);
+            const serverUrl = isLocalEnv ? inferredServer : (envServer || origin);
             if (!serverUrl) return;
-            const res = await fetch(
-              `${serverUrl.replace(/\/$/, "")}/api/prices`,
-              {
+            const [pricesRes, availabilityRes] = await Promise.all([
+              fetch(`${serverUrl.replace(/\/$/, "")}/api/prices`, {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
-              }
-            );
-            if (!res.ok) return;
-            const json = await res.json();
-            const prices = (json?.prices || {}) as Record<
+              }),
+              fetch(`${serverUrl.replace(/\/$/, "")}/api/beat-availability`, {
+                method: "GET",
+                headers: { "Content-Type": "application/json" },
+              }),
+            ]);
+            const pricesJson = pricesRes.ok ? await pricesRes.json() : {};
+            const availabilityJson = availabilityRes.ok
+              ? await availabilityRes.json()
+              : {};
+            if (typeof window !== "undefined") {
+              console.log("[useBeats] /api/beat-availability ok=" + availabilityRes.ok + " status=" + availabilityRes.status);
+              console.log("[useBeats] raw response:", JSON.stringify(availabilityJson));
+              const avail39 = availabilityJson?.availability?.["39"];
+              console.log("[useBeats] availability['39'] (Sunrise):", avail39);
+            }
+            const prices = (pricesJson?.prices || {}) as Record<
               string,
               { amount?: number; unit_amount?: number }
             >;
-            if (!prices || typeof prices !== "object") return;
-            // Merge: match by id (e.g., "2", "29") or by lowercase title (e.g., "prism")
+            const availability = (availabilityJson?.availability || {}) as Record<
+              string,
+              {
+                sold?: boolean;
+                exclusive_available?: boolean;
+                hasStems?: boolean;
+              }
+            >;
             const merged = beats.map((b) => {
               const lowerTitle = String(b.title || "")
                 .trim()
@@ -83,7 +102,18 @@ export function useBeats(delayMs: number = 600) {
                   }
                 }
               }
-              return { ...b, price: newPrice } as BeatData;
+              const avail = availability[String(b.id)];
+              const mergedBeat = {
+                ...b,
+                price: newPrice,
+                sold: avail?.sold ?? b.sold,
+                exclusive_available: avail?.exclusive_available,
+                hasStems: avail?.hasStems,
+              } as BeatData;
+              if (typeof window !== "undefined" && String(b.id) === "39") {
+                console.log("[useBeats] merged beat (Sunrise):", { id: b.id, title: b.title, hasStems: mergedBeat.hasStems, availHasStems: avail?.hasStems });
+              }
+              return mergedBeat;
             });
             if (!active) return;
             setData(merged);

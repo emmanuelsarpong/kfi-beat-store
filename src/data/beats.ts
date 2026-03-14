@@ -7,11 +7,33 @@ export interface BeatData {
   mood: string;
   key?: string;
   price: number;
-  audioUrl: string;
+  /**
+   * Tagged MP3 used for on-site preview playback only.
+   * This is never delivered to customers after purchase.
+   */
+  previewUrl: string;
+  /**
+   * Deprecated alias for previewUrl kept for backwards compatibility.
+   * New code should treat this as a preview-only MP3 as well.
+   */
+  audioUrl?: string;
   coverImage?: string;
   // Optional: force a specific gradient variant (1..N). If omitted, color is derived from id.
   coverVariant?: number;
   paymentLink?: string;
+  /**
+   * Whether this beat has stems available (e.g., Stems.zip or stems folder).
+   * Used to control availability of the Unlimited license tier.
+   */
+  hasStems?: boolean;
+  /**
+   * True only after an Exclusive license purchase. When true, beat cannot be purchased at all.
+   */
+  sold?: boolean;
+  /**
+   * False after any lease purchase or after Exclusive purchase. When false, Exclusive option is unavailable.
+   */
+  exclusive_available?: boolean;
 }
 
 // Helper to safely read Vite env at module init without using any
@@ -32,6 +54,8 @@ export const beats: BeatData[] = [
     mood: "Summer",
     key: "D min",
     price: 400.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/sunrise/Sunrise.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/sunrise/Sunrise.mp3",
   },
@@ -44,6 +68,8 @@ export const beats: BeatData[] = [
     mood: "Summer",
     key: "C min",
     price: 400.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/give%20me%20love/Give%20Me%20Love.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/give%20me%20love/Give%20Me%20Love.mp3",
   },
@@ -57,6 +83,8 @@ export const beats: BeatData[] = [
     key: "E min",
     price: 35.0,
     coverVariant: 4,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/dnd/DND.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/dnd/DND.mp3",
   },
@@ -68,6 +96,8 @@ export const beats: BeatData[] = [
     bpm: 120,
     mood: "Introspective",
     price: 350.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/crown/Crown.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/crown/Crown.mp3",
   },
@@ -80,6 +110,8 @@ export const beats: BeatData[] = [
     mood: "Heartfelt",
     key: "F min",
     price: 375.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/cloudy%20days/Cloudy%20Days.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/cloudy%20days/Cloudy%20Days.mp3",
   },
@@ -92,6 +124,8 @@ export const beats: BeatData[] = [
     mood: "Chill",
     key: "D min",
     price: 400.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/gravity/Gravity.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/gravity/Gravity.mp3",
   },
@@ -104,8 +138,10 @@ export const beats: BeatData[] = [
     mood: "Vibey",
     key: "C# min",
     price: 400.0,
-    audioUrl:
+    previewUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/motion/Motion.mp3",
+    audioUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/motion/motion.mp3",
   },
   // Newest: Can't Stop
   {
@@ -116,6 +152,8 @@ export const beats: BeatData[] = [
     mood: "Party",
     key: "D min",
     price: 450.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/cant%20stop/Cant%20Stop.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/cant%20stop/Cant%20Stop.mp3",
   },
@@ -128,6 +166,8 @@ export const beats: BeatData[] = [
     mood: "Energetic",
     key: "A# min",
     price: 500.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/ashes/Ashes.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/ashes/Ashes.mp3",
   },
@@ -140,6 +180,8 @@ export const beats: BeatData[] = [
     mood: "Chill",
     key: "G# min",
     price: 400.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/bliss/Bliss.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/bliss/Bliss.mp3",
   },
@@ -152,6 +194,8 @@ export const beats: BeatData[] = [
     mood: "Chill",
     key: "E min",
     price: 400.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/sunset/Sunset.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/sunset/Sunset.mp3",
   },
@@ -164,6 +208,8 @@ export const beats: BeatData[] = [
     mood: "Vibey",
     key: "D min",
     price: 500.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/wait/Wait.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/wait/Wait.mp3",
   },
@@ -176,6 +222,8 @@ export const beats: BeatData[] = [
     mood: "Moody",
     key: "F# min",
     price: 450.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/roses/Roses.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/roses/Roses.mp3",
   },
@@ -188,6 +236,8 @@ export const beats: BeatData[] = [
     mood: "Dark",
     key: "E min",
     price: 600.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/orbit/Orbit.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/orbit/Orbit.mp3",
   },
@@ -200,6 +250,8 @@ export const beats: BeatData[] = [
     mood: "Party",
     key: "B min",
     price: 650.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/pulse/Pulse.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/pulse/Pulse.mp3",
   },
@@ -212,6 +264,8 @@ export const beats: BeatData[] = [
     mood: "Party",
     key: "D# min",
     price: 550.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/i%20like%20it/I%20Like%20It.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/i%20like%20it/I%20Like%20It.mp3",
   },
@@ -224,6 +278,8 @@ export const beats: BeatData[] = [
     mood: "Dreamy",
     key: "G# Maj",
     price: 400.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/run/Run.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/run/Run.mp3",
   },
@@ -236,6 +292,8 @@ export const beats: BeatData[] = [
     mood: "Dreamy",
     key: "F min",
     price: 500.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/falling/Falling.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/falling/Falling.mp3",
   },
@@ -247,6 +305,8 @@ export const beats: BeatData[] = [
     bpm: 88,
     mood: "Sad",
     price: 450.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/memories/Memories.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/memories/Memories.mp3",
   },
@@ -261,6 +321,9 @@ export const beats: BeatData[] = [
     // Use a server-signed preview URL if available (works for private buckets),
     // otherwise fall back to a public Supabase URL.
     // Use preview endpoint so playback works for private buckets.
+    previewUrl: VITE_SERVER_URL
+      ? `${VITE_SERVER_URL.replace(/\/$/, "")}/api/preview/lucid?redirect=1`
+      : "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/Lucid.mp3",
     audioUrl: VITE_SERVER_URL
       ? `${VITE_SERVER_URL.replace(/\/$/, "")}/api/preview/lucid?redirect=1`
       : "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/Lucid.mp3",
@@ -275,6 +338,8 @@ export const beats: BeatData[] = [
     mood: "Energetic",
     key: "C# min",
     price: 600.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/prism/Prism.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/prism/Prism.mp3",
   },
@@ -286,6 +351,8 @@ export const beats: BeatData[] = [
     mood: "Playful",
     key: "G# min",
     price: 400.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/see%20you%20go/See%20You%20Go.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/see%20you%20go/See%20You%20Go.mp3",
   },
@@ -297,6 +364,8 @@ export const beats: BeatData[] = [
     mood: "Chill",
     key: "C min",
     price: 500.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/eyes%20on%20me/Eyes%20On%20Me.mp3",
     audioUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/eyes%20on%20me/Eyes%20On%20Me.mp3",
   },

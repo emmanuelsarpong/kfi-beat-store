@@ -1,4 +1,10 @@
-export async function startCheckout(beatId: string = "lucid") {
+export interface CheckoutPayload {
+  beatId: string;
+  beatTitle: string;
+  licenseType: "starter" | "premium" | "unlimited" | "exclusive";
+}
+
+export async function startCheckout(payload: CheckoutPayload) {
   // Prefer explicit env; otherwise infer local server port 8787 when running Vite on 8080/5173
   const inferredServer = (() => {
     try {
@@ -42,29 +48,36 @@ export async function startCheckout(beatId: string = "lucid") {
     // ignore parsing errors; just don't auto-apply a promo code
   }
 
+  const { beatId, beatTitle, licenseType } = payload;
+
   const res = await fetch(
     `${serverUrl.replace(/\/$/, "")}/api/checkout/create`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ beatId, returnUrl: frontendUrl, promotionCode }),
+      body: JSON.stringify({
+        beatId,
+        beatTitle,
+        licenseType,
+        returnUrl: frontendUrl,
+        promotionCode,
+      }),
     }
   );
 
-  if (!res.ok) {
-    let text = "";
-    try {
-      text = await res.text();
-    } catch (e) {
-      // ignore
-    }
-    throw new Error(
-      `Failed to create checkout session: ${res.status} ${
-        text || res.statusText
-      }`
-    );
+  let data: { url?: string; error?: string };
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
   }
-  const data = await res.json();
+  if (!res.ok) {
+    const msg =
+      typeof data?.error === "string" && data.error.trim()
+        ? data.error
+        : res.statusText || "Failed to create checkout session";
+    throw new Error(msg);
+  }
   const url = data?.url;
   if (!url) throw new Error("No checkout URL returned");
   window.location.href = url;

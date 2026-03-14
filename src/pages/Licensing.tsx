@@ -7,22 +7,34 @@ const Licensing: React.FC = () => {
   return (
     <Modal title="Licensing" onClose={() => nav(-1)}>
       <p>
-        We sell <span className="font-semibold text-white">exclusive</span>{" "}
-        licenses only. Each beat is sold once as a full buyout and is
-        permanently removed from the store after purchase. If you need to place
-        a temporary hold or have questions before buying, get in touch via the
-        contact form below.
+        We offer several license options so you can choose the rights that fit
+        your release. The on-site audio is a{" "}
+        <span className="font-semibold text-white">tagged MP3 preview only</span>{" "}
+        and is never delivered after purchase. All deliverables are clean
+        masters and, for higher tiers, stems.
       </p>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">License Type</h3>
-      <ul className="list-disc pl-6 space-y-1">
+      <h3 className="mt-6 mb-2 text-white font-semibold">License Types</h3>
+      <ul className="list-disc pl-6 space-y-2">
         <li>
-          <span className="font-medium text-white">
-            Exclusive (Full Buyout):
-          </span>{" "}
-          Unlimited commercial usage across streaming, downloads, live
-          performances, broadcast, and sync. One purchaser only; the beat is
-          removed from the catalog at checkout.
+          <span className="font-medium text-white">Starter License ($49):</span>{" "}
+          Perfect for demos and independent releases. Delivers the clean master
+          WAV file with entry-level usage rights.
+        </li>
+        <li>
+          <span className="font-medium text-white">Premium License ($99):</span>{" "}
+          Higher streaming and monetization limits while still delivering the
+          same clean master WAV file.
+        </li>
+        <li>
+          <span className="font-medium text-white">Unlimited License ($199):</span>{" "}
+          Includes the master WAV <span className="font-semibold">plus track stems</span>{" "}
+          for full creative control, where stems are available for that beat.
+        </li>
+        <li>
+          <span className="font-medium text-white">Exclusive License:</span>{" "}
+          One-time full buyout. Delivers WAV and stems and marks the beat as
+          exclusively sold so it can no longer be purchased by others.
         </li>
       </ul>
 
@@ -38,11 +50,22 @@ const Licensing: React.FC = () => {
       </ul>
 
       <h3 className="mt-6 mb-2 text-white font-semibold">
-        Stems & Deliverables
+        Stems, Masters & Deliverables
       </h3>
       <p>
-        You will receive master WAV, MP3, and multitrack stems via secure
-        download links after purchase. Keep your links private.
+        After purchase you’ll receive secure, time-limited download links to the
+        files included in your license:
+      </p>
+      <ul className="list-disc pl-6 space-y-1 mt-2">
+        <li>Starter: clean master WAV only.</li>
+        <li>Premium: clean master WAV only.</li>
+        <li>Unlimited: WAV + stems (where stems exist for that beat).</li>
+        <li>Exclusive: WAV + stems and the beat is marked as sold.</li>
+      </ul>
+      <p className="mt-2">
+        The preview MP3 you hear on the website is{" "}
+        <span className="font-semibold text-white">for listening only</span> and
+        is not part of any deliverable.
       </p>
 
       <h3 className="mt-6 mb-2 text-white font-semibold">Attribution</h3>

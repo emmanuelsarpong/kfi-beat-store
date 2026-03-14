@@ -13,14 +13,22 @@ function extractPathFromPublicUrl(url: string): string | null {
 export async function getPlayableUrlForBeat(beat: {
   id: string;
   title?: string;
-  audioUrl: string;
+  /**
+   * Tagged MP3 used for on-site preview only.
+   * Prefer previewUrl when available; audioUrl is a deprecated alias.
+   */
+  previewUrl?: string;
+  audioUrl?: string;
 }): Promise<string> {
   const env = (import.meta as unknown as { env?: Record<string, string> }).env;
   const server = env?.VITE_SERVER_URL;
 
   // Determine storage path inside the beats bucket
   const title = (beat.title || "").toLowerCase();
-  let storagePath = extractPathFromPublicUrl(beat.audioUrl) || "";
+  const rawPreviewUrl = beat.previewUrl || beat.audioUrl || "";
+  let storagePath = rawPreviewUrl
+    ? extractPathFromPublicUrl(rawPreviewUrl) || ""
+    : "";
   if (!storagePath) {
     if (title === "lucid" || beat.id === "1") storagePath = "lucid/Lucid.mp3";
     else if (title === "prism" || beat.id === "2")
@@ -71,6 +79,6 @@ export async function getPlayableUrlForBeat(beat: {
     }
   }
 
-  // 4) Last resort: whatever was provided
-  return beat.audioUrl;
+  // 4) Last resort: whatever was provided (still preview-only)
+  return rawPreviewUrl;
 }
