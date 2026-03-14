@@ -25,6 +25,7 @@ import nodemailer from "nodemailer";
 import {
   ensureBeatRow,
   ensureAllStoreBeats,
+  getStoreBeatTitle,
   isStoreBeatId,
   STORE_BEATS,
 } from "./beatsStore.js";
@@ -49,6 +50,7 @@ const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const STRIPE_PRICE_ID_LUCID = process.env.STRIPE_PRICE_ID_LUCID;
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 // Generic lease prices via Stripe Price IDs (shared across beats)
+// Required for Starter/Premium/Unlimited checkout. If unset, those license types return 400.
 const STRIPE_PRICE_STARTER = process.env.STRIPE_PRICE_STARTER;
 const STRIPE_PRICE_PREMIUM = process.env.STRIPE_PRICE_PREMIUM;
 const STRIPE_PRICE_UNLIMITED = process.env.STRIPE_PRICE_UNLIMITED;
@@ -301,6 +303,185 @@ function slugifyTitleToFolder(name) {
   return String(name || "")
     .trim()
     .toLowerCase();
+}
+
+/** License tier product names that must NOT be used as beat folder names */
+const LICENSE_TIER_NAMES = new Set([
+  "starter license",
+  "premium license",
+  "unlimited license",
+  "exclusive license",
+  "starter",
+  "premium",
+  "unlimited",
+  "exclusive",
+]);
+
+function isLicenseTierProductName(name) {
+  if (typeof name !== "string" || !name.trim()) return false;
+  const normalized = String(name).trim().toLowerCase();
+  return LICENSE_TIER_NAMES.has(normalized) || /\b(starter|premium|unlimited|exclusive)\s+license\b/i.test(normalized);
+}
+
+/**
+ * Resolve the correct beat folder name inside the `beats` bucket.
+ * Prefers title-based matching; never uses Stripe product name when it's a license tier.
+ * @param {{ beatId?: string, beatTitle?: string, productName?: string }} opts
+ * @returns {{ folder: string | null, tried: string[] }}
+ */
+async function resolveBeatFolder(opts = {}) {
+  const { beatId, beatTitle, productName } = opts;
+  const tried = [];
+  const title = typeof beatTitle === "string" ? beatTitle.trim() : null;
+  const id = beatId != null ? String(beatId) : null;
+
+  // 1) Title-based candidates first (lowercase, exact trim, slugified if different)
+  if (title) {
+    const lower = title.toLowerCase();
+    if (lower && !tried.includes(lower)) tried.push(lower);
+    const exact = title;
+    if (exact && exact !== lower && !tried.includes(exact)) tried.push(exact);
+    const slug = slugifyTitleToFolder(title);
+    if (slug && !tried.includes(slug)) tried.push(slug);
+  }
+
+  // 2) Product name only if it's NOT a license tier (e.g. beat name from Stripe)
+  if (typeof productName === "string" && productName.trim() && !isLicenseTierProductName(productName)) {
+    const fromProduct = slugifyTitleToFolder(productName);
+    if (fromProduct && !tried.includes(fromProduct)) tried.push(fromProduct);
+  }
+
+  // 3) Beat id as last resort
+  if (id && !tried.includes(id)) tried.push(id);
+  const idLower = id ? id.toLowerCase() : null;
+  if (idLower && idLower !== id && !tried.includes(idLower)) tried.push(idLower);
+
+  console.log("[delivery] beatId=" + (id ?? "?") + " beatTitle=" + (title ?? "?"));
+  console.log("[delivery] candidates tried: " + JSON.stringify(tried));
+
+  if (!supabase) return { folder: tried[0] || null, tried };
+
+  for (const candidate of tried) {
+    const prefix = String(candidate).trim();
+    if (!prefix) continue;
+    const { data, error } = await supabase.storage.from(BUCKET).list(prefix, { limit: 1 });
+    if (!error) {
+      console.log("[delivery] resolved folder: " + prefix);
+      return { folder: prefix, tried };
+    }
+  }
+
+  const fallback = tried[0] || null;
+  if (fallback) console.log("[delivery] resolved folder (fallback): " + fallback);
+  else console.warn("[delivery] no folder resolved");
+  return { folder: fallback, tried };
+}
+
+/**
+ * List files only inside the given beat folder (one level, no recursion).
+ * @param {string} folder - folder name inside beats bucket
+ * @returns {Promise<Array<{ name: string, path: string }>>}
+ */
+async function listFilesInBeatFolder(folder) {
+  if (!supabase || !folder || !String(folder).trim()) return [];
+  const prefix = String(folder).trim().replace(/\/+$/, "");
+  const { data, error } = await supabase.storage.from(BUCKET).list(prefix, { limit: 100 });
+  if (error) throw error;
+  const items = Array.isArray(data) ? data : [];
+  const files = [];
+  for (const item of items) {
+    const name = item?.name;
+    if (!name || name.startsWith(".")) continue;
+    const isFile = item?.metadata?.mimetype != null;
+    if (!isFile) continue;
+    const path = `${prefix}/${name}`;
+    files.push({ name, path });
+  }
+  return files;
+}
+
+/**
+ * Categorize files from a beat folder into preview MP3, master WAV, and Stems.zip.
+ * Deterministic: one previewMp3 (.mp3), one masterWav (.wav), one stemsZip (Stems.zip case-insensitive).
+ * @param {Array<{ name: string, path: string }>} files
+ * @returns {{ previewMp3: { name: string, path: string } | null, masterWav: { name: string, path: string } | null, stemsZip: { name: string, path: string } | null }}
+ */
+function categorizeBeatFiles(files) {
+  let previewMp3 = null;
+  let masterWav = null;
+  let stemsZip = null;
+  const raw = Array.isArray(files) ? files : [];
+  for (const f of raw) {
+    const name = f?.name;
+    const path = f?.path;
+    if (!name || !path) continue;
+    const lower = name.toLowerCase();
+    if (lower.endsWith(".mp3")) previewMp3 = { name, path };
+    else if (lower.endsWith(".wav")) masterWav = { name, path };
+    else if (lower === "stems.zip") stemsZip = { name, path };
+  }
+  return { previewMp3, masterWav, stemsZip };
+}
+
+/**
+ * Get deliverable file refs by license. Preview MP3 is never delivered.
+ * starter/premium: masterWav only.
+ * unlimited/exclusive: masterWav + stemsZip.
+ * @param {{ previewMp3: object | null, masterWav: object | null, stemsZip: object | null }} categorized
+ * @param {string} licenseType
+ * @returns {Array<{ name: string, path: string }>}
+ */
+function getDeliverableRefsForLicense(categorized, licenseType) {
+  const lt = String(licenseType || "").toLowerCase();
+  const out = [];
+  if (categorized.masterWav) out.push(categorized.masterWav);
+  if (lt === "unlimited" || lt === "exclusive") {
+    if (categorized.stemsZip) out.push(categorized.stemsZip);
+  }
+  return out;
+}
+
+/**
+ * Create signed URLs for deliverable files only. Used by webhook and GET /api/downloads.
+ * @param {Array<{ name: string, path: string }>} refs
+ * @param {number} expiresSec
+ * @returns {Promise<Array<{ name: string, path: string, url: string }>>}
+ */
+async function createSignedUrlsForRefs(refs, expiresSec) {
+  if (!supabase) return [];
+  const result = [];
+  for (const ref of refs) {
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(ref.path, expiresSec);
+    if (error) throw error;
+    if (data?.signedUrl) result.push({ name: ref.name, path: ref.path, url: data.signedUrl });
+  }
+  return result;
+}
+
+/**
+ * Single fulfillment flow: resolve folder, list files, categorize, filter by license, sign URLs.
+ * Used by both webhook and GET /api/downloads so email and success page always match.
+ * @param {{ beatId?: string, beatTitle?: string, productName?: string }} folderOpts
+ * @param {string} licenseType
+ * @param {number} expiresSec
+ * @returns {Promise<{ files: Array<{ name: string, path: string, url: string }>, folder: string | null }>}
+ */
+async function getFulfillmentFiles(folderOpts, licenseType, expiresSec) {
+  const { folder, tried } = await resolveBeatFolder(folderOpts);
+  if (!folder) return { files: [], folder: null };
+
+  const rawFiles = await listFilesInBeatFolder(folder);
+  const fileNames = rawFiles.map((f) => f.name);
+  console.log("[delivery] files found: " + JSON.stringify(fileNames));
+
+  const categorized = categorizeBeatFiles(rawFiles);
+  const refs = getDeliverableRefsForLicense(categorized, licenseType);
+  const deliverNames = refs.map((r) => r.name);
+  console.log("[delivery] licenseType=" + (licenseType || "starter"));
+  console.log("[delivery] delivering: " + JSON.stringify(deliverNames));
+
+  const files = await createSignedUrlsForRefs(refs, expiresSec);
+  return { files, folder };
 }
 
 async function sendDownloadEmail({
@@ -564,9 +745,6 @@ app.post(
           STRIPE_ID_TO_BEAT.get(priceId) ||
           STRIPE_ID_TO_BEAT.get(productId) ||
           null;
-        const folder = productName
-          ? slugifyTitleToFolder(productName)
-          : beatKey;
         // Persist purchase record (idempotent)
         try {
           if (supabase && PURCHASES_TABLE) {
@@ -613,35 +791,29 @@ app.post(
           console.error("[webhook] purchase persistence error", e);
         }
 
+        const beatTitleWebhook =
+          getStoreBeatTitle(beatKey) || meta.beat_title || null;
         let files = [];
+        let resolvedFolder = null;
         try {
-          if (folder) files = await listSignedFiles(folder, 60 * 60 * 24);
-          // Fallback to beatKey if productName-based folder had no files
-          if (files.length === 0 && beatKey && beatKey !== folder) {
-            files = await listSignedFiles(beatKey, 60 * 60 * 24);
-          }
+          const result = await getFulfillmentFiles(
+            {
+              beatId: beatKey,
+              beatTitle: beatTitleWebhook,
+              productName,
+            },
+            licenseType || "starter",
+            60 * 60 * 24
+          );
+          files = result.files;
+          resolvedFolder = result.folder;
         } catch (e) {
           console.error(
             "[webhook] failed to sign files for",
-            folder,
+            beatKey,
             e?.message || e
           );
-          // try best-effort fallback once
-          if (beatKey && beatKey !== folder) {
-            try {
-              files = await listSignedFiles(beatKey, 60 * 60 * 24);
-            } catch (e2) {
-              console.error(
-                "[webhook] fallback sign failed for",
-                beatKey,
-                e2?.message || e2
-              );
-            }
-          }
         }
-        // Block preview MP3; then apply license-aware file selection
-        files = files.filter((f) => isAllowedDownload(f?.name));
-        files = selectDeliverableFiles(files, licenseType || "starter");
         if (!email) {
           console.warn(
             "[webhook] no customer email present for session",
@@ -1001,11 +1173,17 @@ app.post("/api/checkout/create", checkoutLimiter, async (req, res) => {
       priceId = await resolveExclusivePriceId(beatId);
     }
     if (!priceId || typeof priceId !== "string") {
+      const leaseMissing =
+        (normalizedLicenseType === "starter" && !STRIPE_PRICE_STARTER) ||
+        (normalizedLicenseType === "premium" && !STRIPE_PRICE_PREMIUM) ||
+        (normalizedLicenseType === "unlimited" && !STRIPE_PRICE_UNLIMITED);
       return res.status(400).json({
-          error:
+        error:
           normalizedLicenseType === "exclusive"
             ? "No Stripe Price configured for this beat."
-            : "Requested license is temporarily unavailable.",
+            : leaseMissing
+              ? "Starter, Premium, or Unlimited checkout is not configured. Set STRIPE_PRICE_STARTER, STRIPE_PRICE_PREMIUM, and STRIPE_PRICE_UNLIMITED in the server environment."
+              : "Requested license is temporarily unavailable.",
       });
     }
     // Require beat row for availability check; backfill if missing (store beats only), then reject if still missing.
@@ -1150,8 +1328,13 @@ app.post("/api/checkout/create", checkoutLimiter, async (req, res) => {
     }
     return res.json({ id: session.id, url: session.url });
   } catch (err) {
+    const errMsg = err?.message || String(err);
     console.error("[checkout] error", err);
-    return res.status(500).json({ error: "Failed to create checkout session" });
+    const safeMsg =
+      errMsg && typeof errMsg === "string"
+        ? errMsg.slice(0, 400)
+        : "Failed to create checkout session";
+    return res.status(500).json({ error: safeMsg });
   }
 });
 
@@ -1177,42 +1360,34 @@ app.get("/api/downloads/:beat/:sessionId", async (req, res) => {
       (session?.metadata && session.metadata.license_type) || null;
     const customerEmail =
       session?.customer_details?.email || session?.customer_email || null;
-    const inferredFolder = productName
-      ? slugifyTitleToFolder(productName)
-      : null;
+    const beatTitle = getStoreBeatTitle(beat);
     let files = [];
-    let usedFolder = inferredFolder || beat;
+    let usedFolder = null;
     try {
-      if (usedFolder) files = await listSignedFiles(usedFolder, 60 * 60);
-      if (
-        files.length === 0 &&
-        inferredFolder &&
-        beat &&
-        beat !== inferredFolder
-      ) {
-        usedFolder = beat;
-        files = await listSignedFiles(beat, 60 * 60);
-      }
+      const result = await getFulfillmentFiles(
+        {
+          beatId: beat,
+          beatTitle: beatTitle || session?.metadata?.beat_title || null,
+          productName,
+        },
+        licenseType || "starter",
+        60 * 60
+      );
+      files = result.files;
+      usedFolder = result.folder;
     } catch (e) {
-      if (inferredFolder && beat && beat !== inferredFolder) {
-        try {
-          usedFolder = beat;
-          files = await listSignedFiles(beat, 60 * 60);
-        } catch (e2) {
-          console.error("[downloads] both folder attempts failed", e2);
-          return res.status(500).json({ error: "Failed to locate beat files" });
-        }
-      } else {
-        console.error("[downloads] error", e);
-        return res
-          .status(500)
-          .json({ error: "Failed to generate download URLs" });
-      }
+      console.error("[downloads] error", e);
+      return res
+        .status(500)
+        .json({ error: "Failed to generate download URLs" });
     }
-    // Block preview MP3; then apply license-aware file selection (match webhook fulfillment)
-    files = files.filter((f) => isAllowedDownload(f?.name));
-    files = selectDeliverableFiles(files, licenseType || "starter");
     if (!files || files.length === 0) {
+      console.warn(
+        "[downloads] no files after fulfillment",
+        "beat=" + beat,
+        "folder=" + usedFolder,
+        "licenseType=" + licenseType
+      );
       return res
         .status(404)
         .json({ error: `No files found for ${usedFolder || beat}` });

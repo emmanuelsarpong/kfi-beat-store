@@ -104,6 +104,7 @@ describe("API", () => {
               retrieve: async (_id: string, _opts?: unknown) => ({
                 payment_status: "paid",
                 status: "complete",
+                metadata: { license_type: "unlimited" },
                 line_items: {
                   data: [
                     {

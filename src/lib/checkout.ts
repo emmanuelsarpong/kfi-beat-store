@@ -65,17 +65,20 @@ export async function startCheckout(payload: CheckoutPayload) {
     }
   );
 
-  let data: { url?: string; error?: string };
+  let data: { url?: string; error?: string } = {};
+  const text = await res.text();
   try {
-    data = await res.json();
+    if (text) data = JSON.parse(text) as { url?: string; error?: string };
   } catch {
-    data = {};
+    /* non-JSON response */
   }
   if (!res.ok) {
     const msg =
       typeof data?.error === "string" && data.error.trim()
         ? data.error
-        : res.statusText || "Failed to create checkout session";
+        : text && text.length < 300
+          ? `Server error (${res.status}): ${text}`
+          : res.statusText || "Failed to create checkout session";
     throw new Error(msg);
   }
   const url = data?.url;

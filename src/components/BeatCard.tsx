@@ -147,7 +147,7 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
   const handleLicenseClick = () => {
     if (beat.sold === true) return;
     if (import.meta.env.VITE_SERVER_URL) {
-      setSelectedLicense("starter");
+      setSelectedLicense("premium");
       setShowLicenseModal(true);
       return;
     }
