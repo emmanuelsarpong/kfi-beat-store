@@ -103,11 +103,15 @@ export function useBeats(delayMs: number = 600) {
                 }
               }
               const avail = availability[String(b.id)];
+              // Use backend truth when present; when missing, do not assume fully available
+              const sold = avail?.sold ?? b.sold ?? false;
+              const exclusive_available =
+                avail !== undefined ? avail.exclusive_available !== false : false;
               const mergedBeat = {
                 ...b,
                 price: newPrice,
-                sold: avail?.sold ?? b.sold,
-                exclusive_available: avail?.exclusive_available,
+                sold,
+                exclusive_available,
                 hasStems: avail?.hasStems,
               } as BeatData;
               if (typeof window !== "undefined" && String(b.id) === "39") {

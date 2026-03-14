@@ -851,13 +851,14 @@ app.post(
                 if (row && row.sold) {
                   console.info("[webhook] lease ignored, beat already sold beatId=", beatKey);
                 } else if (row && (row.exclusive_available === false && row.first_lease_at)) {
-                  // Already updated by a prior lease; idempotent no-op
+                  // Already updated by a prior lease; idempotent no-op (replay-safe)
                 } else if (row) {
+                  // Set first_lease_at only when still null so replay does not change timestamp
                   await supabase
                     .from("beats")
                     .update({
                       exclusive_available: false,
-                      first_lease_at: row.first_lease_at || nowIso,
+                      first_lease_at: row.first_lease_at ?? nowIso,
                     })
                     .eq("id", beatKey);
                 }
@@ -871,12 +872,13 @@ app.post(
                 if (row && row.sold) {
                   console.info("[webhook] lease ignored, beat already sold title=", productName);
                 } else if (row && (row.exclusive_available === false && row.first_lease_at)) {
+                  // Idempotent no-op (replay-safe)
                 } else if (row) {
                   await supabase
                     .from("beats")
                     .update({
                       exclusive_available: false,
-                      first_lease_at: row.first_lease_at || nowIso,
+                      first_lease_at: row.first_lease_at ?? nowIso,
                     })
                     .eq("id", row.id);
                 }
@@ -885,19 +887,19 @@ app.post(
               if (beatKey) {
                 const { data: row, error: fetchErr } = await supabase
                   .from("beats")
-                  .select("sold")
+                  .select("sold, sold_at")
                   .eq("id", beatKey)
                   .maybeSingle();
                 if (fetchErr) {
                   console.error("[webhook] sold check failed", fetchErr);
                 } else if (row && row.sold) {
                   console.info("[webhook] exclusive replay, already sold beatId=", beatKey);
-                } else {
+                } else if (row) {
                   const { error: upErr } = await supabase
                     .from("beats")
                     .update({
                       sold: true,
-                      sold_at: nowIso,
+                      sold_at: row.sold_at ?? nowIso,
                       exclusive_available: false,
                     })
                     .eq("id", beatKey)
@@ -907,22 +909,23 @@ app.post(
               } else if (productName) {
                 const { data: rows } = await supabase
                   .from("beats")
-                  .select("id, sold")
+                  .select("id, sold, sold_at")
                   .ilike("title", productName)
                   .limit(1);
                 const row = rows?.[0];
                 if (row && row.sold) {
                   console.info("[webhook] exclusive replay, already sold title=", productName);
                 } else if (row) {
-                  await supabase
+                  const { error: upErr2 } = await supabase
                     .from("beats")
                     .update({
                       sold: true,
-                      sold_at: nowIso,
+                      sold_at: row.sold_at ?? nowIso,
                       exclusive_available: false,
                     })
                     .eq("id", row.id)
                     .eq("sold", false);
+                  if (upErr2) console.error("[webhook] exclusive update failed (title)", upErr2);
                 }
               }
             }
@@ -1219,12 +1222,14 @@ app.post("/api/checkout/create", checkoutLimiter, async (req, res) => {
             error: "This beat is not available for purchase.",
           });
         }
+        // Rule: if sold, block all license types (starter, premium, unlimited, exclusive)
         if (existing.sold) {
           console.info("[checkout] rejected sold beat beatId=", beatId);
           return res.status(409).json({
             error: "This beat has already been sold exclusively.",
           });
         }
+        // Rule: if exclusive requested but exclusive_available is false (e.g. after any lease), block
         if (normalizedLicenseType === "exclusive" && existing.exclusive_available === false) {
           console.info("[checkout] rejected exclusive unavailable beatId=", beatId);
           return res.status(409).json({
@@ -1469,10 +1474,10 @@ app.get("/api/beat-availability", async (_req, res) => {
           exclusive_available: row.exclusive_available !== false,
         };
     }
-    // Ensure every store beat has an entry (safe default if row still missing after sync)
+    // Ensure every store beat has an entry. If row still missing after sync, do not assume Exclusive available.
     for (const { id } of STORE_BEATS) {
       if (availability[id] == null) {
-        availability[id] = { sold: false, exclusive_available: true };
+        availability[id] = { sold: false, exclusive_available: false };
       }
     }
     // Derive hasStems from storage (Stems.zip or stems/ folder) per store beat

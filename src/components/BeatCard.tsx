@@ -646,7 +646,10 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
                 </div>
                 <Button
                   onClick={handleCheckout}
-                  disabled={checkoutLoading}
+                  disabled={
+                    checkoutLoading ||
+                    (selectedLicense === "exclusive" && !exclusiveEnabled)
+                  }
                   className="continue-button relative inline-flex w-full sm:w-auto items-center justify-center h-[52px] px-6 rounded-2xl font-semibold text-white bg-[linear-gradient(135deg,#1f1f1f,#0d0d0d)] border border-white/15 hover:border-white/25 hover:-translate-y-[1px] hover:shadow-[0_10px_25px_rgba(0,0,0,0.4)] transition-transform duration-200 ease-out"
                 >
                   {checkoutLoading
