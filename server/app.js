@@ -691,6 +691,291 @@ async function sendDownloadEmail({
 
 // --- Routes ---
 
+// --- Stripe webhook processing ---
+// Production goals:
+// - Verify signature using the *raw* request body (must run before express.json()).
+// - Respond 200 ASAP to avoid Stripe retries/timeouts.
+// - Run business logic asynchronously and protect against duplicate event delivery.
+const PROCESSED_STRIPE_EVENT_TTL_MS = 1000 * 60 * 60 * 24; // 24h
+const processedStripeEvents = new Map(); // eventId -> processedAtMs
+function markStripeEventProcessed(id) {
+  if (!id) return;
+  processedStripeEvents.set(String(id), Date.now());
+}
+function hasStripeEventBeenProcessed(id) {
+  if (!id) return false;
+  const ts = processedStripeEvents.get(String(id));
+  if (typeof ts !== "number") return false;
+  if (Date.now() - ts > PROCESSED_STRIPE_EVENT_TTL_MS) {
+    processedStripeEvents.delete(String(id));
+    return false;
+  }
+  return true;
+}
+function pruneProcessedStripeEvents() {
+  const now = Date.now();
+  for (const [id, ts] of processedStripeEvents.entries()) {
+    if (typeof ts !== "number" || now - ts > PROCESSED_STRIPE_EVENT_TTL_MS) {
+      processedStripeEvents.delete(id);
+    }
+  }
+}
+
+async function processStripeEvent(event) {
+  const eventId = event?.id || "unknown";
+  const eventType = event?.type || "unknown";
+  try {
+    if (!event || !event.type) {
+      console.warn("[webhook] invalid event payload", { eventId, eventType });
+      return;
+    }
+
+    // Handle "at least once" delivery: Stripe may retry the same event id.
+    if (hasStripeEventBeenProcessed(eventId)) {
+      console.info("[webhook] duplicate ignored", { eventId, eventType });
+      return;
+    }
+    // Opportunistic cleanup (bounded by TTL)
+    pruneProcessedStripeEvents();
+    markStripeEventProcessed(eventId);
+
+    // Keep existing business logic for checkout completion, but run it async.
+    if (
+      event.type === "checkout.session.completed" ||
+      event.type === "checkout.session.async_payment_succeeded"
+    ) {
+      const session = event.data.object;
+      let email = session?.customer_details?.email || session?.customer_email;
+      const meta = session?.metadata || {};
+      const licenseType = meta.license_type || null;
+      const beatIdMeta = meta.beat_id || meta.beat || session?.client_reference_id;
+
+      const full = await stripe.checkout.sessions.retrieve(session.id, {
+        expand: ["line_items.data.price.product"],
+      });
+      if (!email) email = full?.customer_details?.email || email;
+
+      const item = full?.line_items?.data?.[0];
+      const price = item?.price;
+      const product = price?.product;
+      const priceId = price?.id;
+      const productId = typeof product === "object" ? product?.id : undefined;
+      const productName = typeof product === "object" ? product?.name : undefined;
+
+      const beatKey =
+        beatIdMeta ||
+        STRIPE_ID_TO_BEAT.get(priceId) ||
+        STRIPE_ID_TO_BEAT.get(productId) ||
+        null;
+
+      // Persist purchase record (idempotent by checkout session id)
+      try {
+        if (supabase && PURCHASES_TABLE) {
+          const amountTotal =
+            session?.amount_total ??
+            full?.amount_total ??
+            (typeof price?.unit_amount === "number" ? price.unit_amount : null);
+          const currency =
+            session?.currency || full?.currency || price?.currency || "usd";
+          const paymentIntentId =
+            typeof session?.payment_intent === "string"
+              ? session.payment_intent
+              : session?.payment_intent?.id || null;
+          const { error: upsertErr } = await supabase
+            .from(PURCHASES_TABLE)
+            .upsert(
+              {
+                stripe_checkout_session_id: session.id,
+                stripe_payment_intent_id: paymentIntentId,
+                buyer_email: email || null,
+                beat_id: beatKey || beatIdMeta || null,
+                beat_title_snapshot: meta.beat_title || productName || null,
+                license_type: licenseType,
+                amount_total: amountTotal,
+                currency,
+                payment_status: session?.payment_status || session?.status,
+                raw_metadata: meta,
+                stripe_price_id: priceId || null,
+                stripe_product_id: productId || null,
+                product_name_snapshot: productName || null,
+              },
+              { onConflict: "stripe_checkout_session_id" }
+            );
+          if (upsertErr) console.error("[webhook] purchase upsert failed", upsertErr);
+        }
+      } catch (e) {
+        console.error("[webhook] purchase persistence error", e?.stack || e);
+      }
+
+      const beatTitleWebhook =
+        getStoreBeatTitle(beatKey) || meta.beat_title || null;
+      let files = [];
+      try {
+        const result = await getFulfillmentFiles(
+          { beatId: beatKey, beatTitle: beatTitleWebhook, productName },
+          licenseType || "starter",
+          60 * 60 * 24
+        );
+        files = result.files;
+      } catch (e) {
+        console.error(
+          "[webhook] failed to sign files for",
+          beatKey,
+          e?.message || e
+        );
+      }
+
+      if (!email) {
+        console.warn("[webhook] no customer email present", { sessionId: session?.id });
+      }
+
+      if (email && files.length > 0) {
+        try {
+          await sendDownloadEmail({
+            to: email,
+            productName: productName || "Your Beat",
+            files,
+            expiresHours: 24,
+          });
+          try {
+            SENT_SESSIONS.add(session.id);
+          } catch {}
+        } catch (e) {
+          // Email failures should never cause Stripe retries.
+          console.error("[webhook] email send failed", e?.stack || e);
+        }
+      }
+
+      // Update beat availability (idempotent + sold-safe)
+      try {
+        if (supabase) {
+          const isLease =
+            licenseType === "starter" ||
+            licenseType === "premium" ||
+            licenseType === "unlimited";
+          const isExclusive = licenseType === "exclusive";
+          const nowIso = new Date().toISOString();
+
+          if (isLease) {
+            if (beatKey) {
+              const { data: row } = await supabase
+                .from("beats")
+                .select("sold, exclusive_available, first_lease_at")
+                .eq("id", beatKey)
+                .maybeSingle();
+              if (row && row.sold) {
+                console.info("[webhook] lease ignored, beat already sold", { beatId: beatKey });
+              } else if (row && row.exclusive_available === false && row.first_lease_at) {
+                // idempotent no-op (replay-safe)
+              } else if (row) {
+                await supabase
+                  .from("beats")
+                  .update({
+                    exclusive_available: false,
+                    first_lease_at: row.first_lease_at ?? nowIso,
+                  })
+                  .eq("id", beatKey);
+              }
+            } else if (productName) {
+              const { data: rows } = await supabase
+                .from("beats")
+                .select("id, sold, exclusive_available, first_lease_at")
+                .ilike("title", productName)
+                .limit(1);
+              const row = rows?.[0];
+              if (row && row.sold) {
+                console.info("[webhook] lease ignored, beat already sold", { title: productName });
+              } else if (row && row.exclusive_available === false && row.first_lease_at) {
+                // idempotent no-op (replay-safe)
+              } else if (row) {
+                await supabase
+                  .from("beats")
+                  .update({
+                    exclusive_available: false,
+                    first_lease_at: row.first_lease_at ?? nowIso,
+                  })
+                  .eq("id", row.id);
+              }
+            }
+          } else if (isExclusive) {
+            if (beatKey) {
+              const { data: row, error: fetchErr } = await supabase
+                .from("beats")
+                .select("sold, sold_at")
+                .eq("id", beatKey)
+                .maybeSingle();
+              if (fetchErr) {
+                console.error("[webhook] sold check failed", fetchErr);
+              } else if (row && row.sold) {
+                console.info("[webhook] exclusive replay, already sold", { beatId: beatKey });
+              } else if (row) {
+                const { error: upErr } = await supabase
+                  .from("beats")
+                  .update({
+                    sold: true,
+                    sold_at: row.sold_at ?? nowIso,
+                    exclusive_available: false,
+                  })
+                  .eq("id", beatKey)
+                  .eq("sold", false);
+                if (upErr) console.error("[webhook] exclusive update failed", upErr);
+              }
+            } else if (productName) {
+              const { data: rows } = await supabase
+                .from("beats")
+                .select("id, sold, sold_at")
+                .ilike("title", productName)
+                .limit(1);
+              const row = rows?.[0];
+              if (row && row.sold) {
+                console.info("[webhook] exclusive replay, already sold", { title: productName });
+              } else if (row) {
+                const { error: upErr2 } = await supabase
+                  .from("beats")
+                  .update({
+                    sold: true,
+                    sold_at: row.sold_at ?? nowIso,
+                    exclusive_available: false,
+                  })
+                  .eq("id", row.id)
+                  .eq("sold", false);
+                if (upErr2) console.error("[webhook] exclusive update failed (title)", upErr2);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error("[webhook] beat availability update failed", e?.stack || e);
+      }
+
+      console.info("[webhook] processed", { eventId, eventType, sessionId: session?.id });
+      return;
+    }
+
+    // Minimal safe handling for payment_intent.succeeded (often useful for future reconciliation)
+    if (event.type === "payment_intent.succeeded") {
+      const pi = event.data.object;
+      console.info("[webhook] payment_intent.succeeded", {
+        eventId,
+        paymentIntentId: pi?.id || null,
+        amount: pi?.amount_received ?? pi?.amount ?? null,
+        currency: pi?.currency || null,
+      });
+      return;
+    }
+
+    console.info("[webhook] unhandled event type", { eventId, eventType });
+  } catch (e) {
+    // IMPORTANT: processing failures should never cause non-200 responses.
+    console.error("[webhook] processing failed", {
+      eventId,
+      eventType,
+      error: e?.message || String(e),
+      stack: e?.stack || null,
+    });
+  }
+}
+
 // Stripe webhook must use raw body and sit before json parser
 app.post(
   "/webhook/stripe",
@@ -701,11 +986,7 @@ app.post(
     let event;
     try {
       const sig = req.headers["stripe-signature"];
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        sig,
-        STRIPE_WEBHOOK_SECRET
-      );
+      event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
     } catch (err) {
       console.error(
         "[webhook] signature verification failed",
@@ -714,231 +995,15 @@ app.post(
       return res.sendStatus(400);
     }
 
-    try {
-      if (
-        event.type === "checkout.session.completed" ||
-        event.type === "checkout.session.async_payment_succeeded"
-      ) {
-        const session = event.data.object;
-        let email = session?.customer_details?.email || session?.customer_email;
-        const meta = session?.metadata || {};
-        const licenseType = meta.license_type || null;
-        const beatIdMeta =
-          meta.beat_id ||
-          meta.beat ||
-          session?.client_reference_id;
-        const full = await stripe.checkout.sessions.retrieve(session.id, {
-          expand: ["line_items.data.price.product"],
-        });
-        if (!email) {
-          email = full?.customer_details?.email || email;
-        }
-        const item = full?.line_items?.data?.[0];
-        const price = item?.price;
-        const product = price?.product;
-        const priceId = price?.id;
-        const productId = typeof product === "object" ? product?.id : undefined;
-        const productName =
-          typeof product === "object" ? product?.name : undefined;
-        let beatKey =
-          beatIdMeta ||
-          STRIPE_ID_TO_BEAT.get(priceId) ||
-          STRIPE_ID_TO_BEAT.get(productId) ||
-          null;
-        // Persist purchase record (idempotent)
-        try {
-          if (supabase && PURCHASES_TABLE) {
-            const amountTotal =
-              session?.amount_total ??
-              full?.amount_total ??
-              (typeof price?.unit_amount === "number"
-                ? price.unit_amount
-                : null);
-            const currency =
-              session?.currency ||
-              full?.currency ||
-              price?.currency ||
-              "usd";
-            const paymentIntentId =
-              typeof session?.payment_intent === "string"
-                ? session.payment_intent
-                : session?.payment_intent?.id || null;
-            const { error: upsertErr } = await supabase
-              .from(PURCHASES_TABLE)
-              .upsert(
-                {
-                  stripe_checkout_session_id: session.id,
-                  stripe_payment_intent_id: paymentIntentId,
-                  buyer_email: email || null,
-                  beat_id: beatKey || beatIdMeta || null,
-                  beat_title_snapshot: meta.beat_title || productName || null,
-                  license_type: licenseType,
-                  amount_total: amountTotal,
-                  currency,
-                  payment_status: session?.payment_status || session?.status,
-                  raw_metadata: meta,
-                  stripe_price_id: priceId || null,
-                  stripe_product_id: productId || null,
-                  product_name_snapshot: productName || null,
-                },
-                { onConflict: "stripe_checkout_session_id" }
-              );
-            if (upsertErr) {
-              console.error("[webhook] failed to upsert purchase", upsertErr);
-            }
-          }
-        } catch (e) {
-          console.error("[webhook] purchase persistence error", e);
-        }
+    // ACK immediately. Processing happens async so Stripe delivery does not fail due to slow work.
+    res.status(200).send();
 
-        const beatTitleWebhook =
-          getStoreBeatTitle(beatKey) || meta.beat_title || null;
-        let files = [];
-        let resolvedFolder = null;
-        try {
-          const result = await getFulfillmentFiles(
-            {
-              beatId: beatKey,
-              beatTitle: beatTitleWebhook,
-              productName,
-            },
-            licenseType || "starter",
-            60 * 60 * 24
-          );
-          files = result.files;
-          resolvedFolder = result.folder;
-        } catch (e) {
-          console.error(
-            "[webhook] failed to sign files for",
-            beatKey,
-            e?.message || e
-          );
-        }
-        if (!email) {
-          console.warn(
-            "[webhook] no customer email present for session",
-            session?.id
-          );
-        }
-        if (email && files.length > 0) {
-          await sendDownloadEmail({
-            to: email,
-            productName: productName || "Your Beat",
-            files,
-            expiresHours: 24,
-          });
-          try {
-            SENT_SESSIONS.add(session.id);
-          } catch {}
-        }
-        // Update beat availability: lease => exclusive_available false (never touch sold); exclusive => sold + exclusive_available (only when not already sold).
-        try {
-          if (supabase) {
-            const isLease =
-              licenseType === "starter" ||
-              licenseType === "premium" ||
-              licenseType === "unlimited";
-            const isExclusive = licenseType === "exclusive";
-            const nowIso = new Date().toISOString();
-
-            if (isLease) {
-              if (beatKey) {
-                const { data: row } = await supabase
-                  .from("beats")
-                  .select("sold, exclusive_available, first_lease_at")
-                  .eq("id", beatKey)
-                  .maybeSingle();
-                if (row && row.sold) {
-                  console.info("[webhook] lease ignored, beat already sold beatId=", beatKey);
-                } else if (row && (row.exclusive_available === false && row.first_lease_at)) {
-                  // Already updated by a prior lease; idempotent no-op (replay-safe)
-                } else if (row) {
-                  // Set first_lease_at only when still null so replay does not change timestamp
-                  await supabase
-                    .from("beats")
-                    .update({
-                      exclusive_available: false,
-                      first_lease_at: row.first_lease_at ?? nowIso,
-                    })
-                    .eq("id", beatKey);
-                }
-              } else if (productName) {
-                const { data: rows } = await supabase
-                  .from("beats")
-                  .select("id, sold, exclusive_available, first_lease_at")
-                  .ilike("title", productName)
-                  .limit(1);
-                const row = rows?.[0];
-                if (row && row.sold) {
-                  console.info("[webhook] lease ignored, beat already sold title=", productName);
-                } else if (row && (row.exclusive_available === false && row.first_lease_at)) {
-                  // Idempotent no-op (replay-safe)
-                } else if (row) {
-                  await supabase
-                    .from("beats")
-                    .update({
-                      exclusive_available: false,
-                      first_lease_at: row.first_lease_at ?? nowIso,
-                    })
-                    .eq("id", row.id);
-                }
-              }
-            } else if (isExclusive) {
-              if (beatKey) {
-                const { data: row, error: fetchErr } = await supabase
-                  .from("beats")
-                  .select("sold, sold_at")
-                  .eq("id", beatKey)
-                  .maybeSingle();
-                if (fetchErr) {
-                  console.error("[webhook] sold check failed", fetchErr);
-                } else if (row && row.sold) {
-                  console.info("[webhook] exclusive replay, already sold beatId=", beatKey);
-                } else if (row) {
-                  const { error: upErr } = await supabase
-                    .from("beats")
-                    .update({
-                      sold: true,
-                      sold_at: row.sold_at ?? nowIso,
-                      exclusive_available: false,
-                    })
-                    .eq("id", beatKey)
-                    .eq("sold", false);
-                  if (upErr) console.error("[webhook] exclusive update failed", upErr);
-                }
-              } else if (productName) {
-                const { data: rows } = await supabase
-                  .from("beats")
-                  .select("id, sold, sold_at")
-                  .ilike("title", productName)
-                  .limit(1);
-                const row = rows?.[0];
-                if (row && row.sold) {
-                  console.info("[webhook] exclusive replay, already sold title=", productName);
-                } else if (row) {
-                  const { error: upErr2 } = await supabase
-                    .from("beats")
-                    .update({
-                      sold: true,
-                      sold_at: row.sold_at ?? nowIso,
-                      exclusive_available: false,
-                    })
-                    .eq("id", row.id)
-                    .eq("sold", false);
-                  if (upErr2) console.error("[webhook] exclusive update failed (title)", upErr2);
-                }
-              }
-            }
-          }
-        } catch (e) {
-          console.error("[webhook] beat availability update failed", e);
-        }
-      }
-    } catch (e) {
-      console.error("[webhook] handler error", e);
-      return res.sendStatus(200);
-    }
-    return res.sendStatus(200);
+    // Process asynchronously. Errors are logged but never affect the already-sent response.
+    setImmediate(() => {
+      processStripeEvent(event).catch((e) => {
+        console.error("[webhook] async processor crashed", e?.stack || e);
+      });
+    });
   }
 );
 
