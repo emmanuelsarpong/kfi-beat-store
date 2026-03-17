@@ -73,6 +73,8 @@ const supabase =
     : null;
 const BUCKET = "beats";
 const PURCHASES_TABLE = "purchases";
+// Legacy in-memory email dedupe. Webhook now uses purchases.fulfilled for durable idempotency.
+// (Downloads endpoint still uses this as a best-effort fallback.)
 const SENT_SESSIONS = new Set();
 
 async function listSignedFiles(prefix = "", expiresSec = 60 * 60) {
@@ -691,53 +693,93 @@ async function sendDownloadEmail({
 
 // --- Routes ---
 
-// --- Stripe webhook processing ---
+// --- Stripe webhook processing (persistent, replay-safe) ---
 // Production goals:
 // - Verify signature using the *raw* request body (must run before express.json()).
-// - Respond 200 ASAP to avoid Stripe retries/timeouts.
-// - Run business logic asynchronously and protect against duplicate event delivery.
-const PROCESSED_STRIPE_EVENT_TTL_MS = 1000 * 60 * 60 * 24; // 24h
-const processedStripeEvents = new Map(); // eventId -> processedAtMs
-function markStripeEventProcessed(id) {
-  if (!id) return;
-  processedStripeEvents.set(String(id), Date.now());
-}
-function hasStripeEventBeenProcessed(id) {
-  if (!id) return false;
-  const ts = processedStripeEvents.get(String(id));
-  if (typeof ts !== "number") return false;
-  if (Date.now() - ts > PROCESSED_STRIPE_EVENT_TTL_MS) {
-    processedStripeEvents.delete(String(id));
-    return false;
+// - Persist every verified event (unique on event_id) and ACK quickly.
+// - Process from persisted storage and track status for retries.
+// - Make side effects idempotent (no duplicate emails / double fulfillment).
+
+async function persistStripeEvent(event) {
+  if (!supabase) {
+    return { ok: false, duplicate: false, record: null, error: new Error("Supabase not configured") };
   }
-  return true;
-}
-function pruneProcessedStripeEvents() {
-  const now = Date.now();
-  for (const [id, ts] of processedStripeEvents.entries()) {
-    if (typeof ts !== "number" || now - ts > PROCESSED_STRIPE_EVENT_TTL_MS) {
-      processedStripeEvents.delete(id);
+  const eventId = String(event?.id || "");
+  const eventType = String(event?.type || "");
+  if (!eventId || !eventType) {
+    return { ok: false, duplicate: false, record: null, error: new Error("Invalid Stripe event") };
+  }
+  try {
+    // Insert once. Unique index on (event_id) provides true dedupe across restarts.
+    const { data, error } = await supabase
+      .from("stripe_events")
+      .insert({
+        event_id: eventId,
+        event_type: eventType,
+        status: "received",
+        payload: event,
+      })
+      .select("id, event_id, event_type, status")
+      .single();
+    if (error) {
+      // Postgres unique violation
+      if (String(error.code) === "23505") {
+        return { ok: true, duplicate: true, record: null, error: null };
+      }
+      return { ok: false, duplicate: false, record: null, error };
     }
+    return { ok: true, duplicate: false, record: data, error: null };
+  } catch (e) {
+    return { ok: false, duplicate: false, record: null, error: e };
   }
 }
 
-async function processStripeEvent(event) {
-  const eventId = event?.id || "unknown";
-  const eventType = event?.type || "unknown";
+async function markStripeEventStatus(eventId, status, fields = {}) {
+  if (!supabase) return;
+  const update = {
+    status,
+    updated_at: new Date().toISOString(),
+    ...fields,
+  };
+  await supabase
+    .from("stripe_events")
+    .update(update)
+    .eq("event_id", eventId);
+}
+
+async function processStripeEventRecord(stripeEventRowId) {
+  if (!supabase) return;
+  const { data: row, error } = await supabase
+    .from("stripe_events")
+    .select("id, event_id, event_type, status, payload")
+    .eq("id", stripeEventRowId)
+    .maybeSingle();
+  if (error || !row) {
+    console.error("[webhook] failed to load stripe_events row", error || { id: stripeEventRowId });
+    return;
+  }
+  const eventId = row.event_id;
+  const eventType = row.event_type;
+
+  // Only process when received/failed. If already processed, skip.
+  if (row.status === "processed") {
+    console.info("[webhook] already processed", { eventId, eventType });
+    return;
+  }
+
+  // Soft lock to reduce concurrent double-processing across multiple instances.
+  // If another worker already flipped it to processing, this update will still be idempotent
+  // because all side effects below are guarded by unique IDs and DB state.
+  await markStripeEventStatus(eventId, "processing");
+
+  const event = row.payload;
   try {
     if (!event || !event.type) {
-      console.warn("[webhook] invalid event payload", { eventId, eventType });
+      await markStripeEventStatus(eventId, "failed", {
+        error_message: "Invalid event payload (missing type)",
+      });
       return;
     }
-
-    // Handle "at least once" delivery: Stripe may retry the same event id.
-    if (hasStripeEventBeenProcessed(eventId)) {
-      console.info("[webhook] duplicate ignored", { eventId, eventType });
-      return;
-    }
-    // Opportunistic cleanup (bounded by TTL)
-    pruneProcessedStripeEvents();
-    markStripeEventProcessed(eventId);
 
     // Keep existing business logic for checkout completion, but run it async.
     if (
@@ -829,7 +871,20 @@ async function processStripeEvent(event) {
         console.warn("[webhook] no customer email present", { sessionId: session?.id });
       }
 
-      if (email && files.length > 0) {
+      // Idempotent email: purchases.fulfilled is the durable "already emailed" flag.
+      let alreadyFulfilled = false;
+      try {
+        if (supabase && PURCHASES_TABLE) {
+          const { data: purchase } = await supabase
+            .from(PURCHASES_TABLE)
+            .select("fulfilled")
+            .eq("stripe_checkout_session_id", session.id)
+            .maybeSingle();
+          alreadyFulfilled = Boolean(purchase?.fulfilled);
+        }
+      } catch {}
+
+      if (email && files.length > 0 && !alreadyFulfilled) {
         try {
           await sendDownloadEmail({
             to: email,
@@ -838,8 +893,15 @@ async function processStripeEvent(event) {
             expiresHours: 24,
           });
           try {
-            SENT_SESSIONS.add(session.id);
-          } catch {}
+            if (supabase && PURCHASES_TABLE) {
+              await supabase
+                .from(PURCHASES_TABLE)
+                .update({ fulfilled: true })
+                .eq("stripe_checkout_session_id", session.id);
+            }
+          } catch (e) {
+            console.warn("[webhook] failed to set fulfilled flag", e?.message || e);
+          }
         } catch (e) {
           // Email failures should never cause Stripe retries.
           console.error("[webhook] email send failed", e?.stack || e);
@@ -949,6 +1011,7 @@ async function processStripeEvent(event) {
       }
 
       console.info("[webhook] processed", { eventId, eventType, sessionId: session?.id });
+      await markStripeEventStatus(eventId, "processed", { processed_at: new Date().toISOString(), error_message: null });
       return;
     }
 
@@ -961,17 +1024,23 @@ async function processStripeEvent(event) {
         amount: pi?.amount_received ?? pi?.amount ?? null,
         currency: pi?.currency || null,
       });
+      await markStripeEventStatus(eventId, "processed", { processed_at: new Date().toISOString(), error_message: null });
       return;
     }
 
     console.info("[webhook] unhandled event type", { eventId, eventType });
+    await markStripeEventStatus(eventId, "processed", { processed_at: new Date().toISOString(), error_message: null });
   } catch (e) {
-    // IMPORTANT: processing failures should never cause non-200 responses.
+    const msg = e?.message || String(e);
+    const stack = e?.stack || null;
     console.error("[webhook] processing failed", {
       eventId,
       eventType,
-      error: e?.message || String(e),
-      stack: e?.stack || null,
+      error: msg,
+      stack,
+    });
+    await markStripeEventStatus(eventId, "failed", {
+      error_message: stack ? `${msg}\n${stack}` : msg,
     });
   }
 }
@@ -995,15 +1064,43 @@ app.post(
       return res.sendStatus(400);
     }
 
-    // ACK immediately. Processing happens async so Stripe delivery does not fail due to slow work.
+    const eventId = event?.id || "unknown";
+    const eventType = event?.type || "unknown";
+
+    // Persist first (true dedupe across restarts), then ACK quickly.
+    const persist = await persistStripeEvent(event);
+    if (!persist.ok) {
+      console.error("[webhook] failed to persist event", {
+        eventId,
+        eventType,
+        error: persist.error?.message || persist.error,
+        stack: persist.error?.stack || null,
+      });
+      // Still ACK to avoid Stripe retry storm; we can’t recover without persistence anyway.
+      return res.status(200).send();
+    }
+    if (persist.duplicate) {
+      console.info("[webhook] duplicate event (db) ignored", { eventId, eventType });
+      return res.status(200).send();
+    }
+
+    console.info("[webhook] received", { eventId, eventType, persisted: true });
     res.status(200).send();
 
-    // Process asynchronously. Errors are logged but never affect the already-sent response.
-    setImmediate(() => {
-      processStripeEvent(event).catch((e) => {
-        console.error("[webhook] async processor crashed", e?.stack || e);
+    // Process asynchronously from persisted record.
+    const rowId = persist.record?.id;
+    if (rowId) {
+      setImmediate(() => {
+        processStripeEventRecord(rowId).catch((e) => {
+          console.error("[webhook] async processor crashed", {
+            eventId,
+            eventType,
+            error: e?.message || String(e),
+            stack: e?.stack || null,
+          });
+        });
       });
-    });
+    }
   }
 );
 
