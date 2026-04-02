@@ -52,7 +52,7 @@ export const beats: BeatData[] = [
     genre: "Afrobeats",
     bpm: 91,
     mood: "Romantic",
-    key: "G min",
+    key: "A min",
     price: 400.0,
     coverVariant: 21,
     previewUrl:
