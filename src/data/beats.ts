@@ -45,6 +45,21 @@ const VITE_SERVER_URL: string | undefined =
     : undefined;
 
 export const beats: BeatData[] = [
+  // Newest: Velvet
+  {
+    id: "40",
+    title: "Velvet",
+    genre: "Afrobeats",
+    bpm: 91,
+    mood: "Romantic",
+    key: "G min",
+    price: 400.0,
+    coverVariant: 21,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/velvet/Velvet.mp3",
+    audioUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/velvet/Velvet.mp3",
+  },
   // Newest: Sunrise
   {
     id: "39",

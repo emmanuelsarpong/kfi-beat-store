@@ -1074,6 +1074,18 @@
 .grad-beat-20 {
   background: linear-gradient(135deg, #16222a, #46b2d6, #2f80ed);
 }
+/* Velvet / romantic red-wine undertone (used via coverVariant: 21) */
+.grad-beat-21 {
+  background: linear-gradient(
+    145deg,
+    #120508 0%,
+    #2a0a12 22%,
+    #5c1224 48%,
+    #9a1f32 72%,
+    #c73e52 88%,
+    #e88896 100%
+  );
+}
 
 /* Soft hover scale similar to image variant */
 .grad-beat-base {

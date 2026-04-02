@@ -738,7 +738,6 @@ async function markStripeEventStatus(eventId, status, fields = {}) {
   if (!supabase) return;
   const update = {
     status,
-    updated_at: new Date().toISOString(),
     ...fields,
   };
   await supabase
@@ -747,31 +746,37 @@ async function markStripeEventStatus(eventId, status, fields = {}) {
     .eq("event_id", eventId);
 }
 
+async function claimStripeEventForProcessingById(stripeEventRowId) {
+  if (!supabase) return { claimed: false, row: null };
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("stripe_events")
+    .update({ status: "processing", updated_at: nowIso })
+    .eq("id", stripeEventRowId)
+    .in("status", ["received", "failed"])
+    .select("id, event_id, event_type, status, payload")
+    .maybeSingle();
+  if (error) {
+    console.error("[webhook] claim failed", error);
+    return { claimed: false, row: null };
+  }
+  if (!data) return { claimed: false, row: null };
+  return { claimed: true, row: data };
+}
+
 async function processStripeEventRecord(stripeEventRowId) {
   if (!supabase) return;
-  const { data: row, error } = await supabase
-    .from("stripe_events")
-    .select("id, event_id, event_type, status, payload")
-    .eq("id", stripeEventRowId)
-    .maybeSingle();
-  if (error || !row) {
-    console.error("[webhook] failed to load stripe_events row", error || { id: stripeEventRowId });
+  // Atomic claim: only one worker can transition received/failed -> processing.
+  const claim = await claimStripeEventForProcessingById(stripeEventRowId);
+  if (!claim.claimed) {
+    console.info("[webhook] not claimed (already processing/processed)", {
+      stripeEventRowId,
+    });
     return;
   }
+  const row = claim.row;
   const eventId = row.event_id;
   const eventType = row.event_type;
-
-  // Only process when received/failed. If already processed, skip.
-  if (row.status === "processed") {
-    console.info("[webhook] already processed", { eventId, eventType });
-    return;
-  }
-
-  // Soft lock to reduce concurrent double-processing across multiple instances.
-  // If another worker already flipped it to processing, this update will still be idempotent
-  // because all side effects below are guarded by unique IDs and DB state.
-  await markStripeEventStatus(eventId, "processing");
-
   const event = row.payload;
   try {
     if (!event || !event.type) {
@@ -872,19 +877,25 @@ async function processStripeEventRecord(stripeEventRowId) {
       }
 
       // Idempotent email: purchases.fulfilled is the durable "already emailed" flag.
-      let alreadyFulfilled = false;
-      try {
-        if (supabase && PURCHASES_TABLE) {
-          const { data: purchase } = await supabase
+      // Concurrency-safe email claim: atomically flip fulfilled false->true (only one worker wins).
+      let claimedEmail = false;
+      if (supabase && PURCHASES_TABLE && email && files.length > 0) {
+        try {
+          const { data: claimed } = await supabase
             .from(PURCHASES_TABLE)
-            .select("fulfilled")
+            .update({ fulfilled: true })
             .eq("stripe_checkout_session_id", session.id)
+            .eq("fulfilled", false)
+            .select("stripe_checkout_session_id")
             .maybeSingle();
-          alreadyFulfilled = Boolean(purchase?.fulfilled);
+          claimedEmail = Boolean(claimed?.stripe_checkout_session_id);
+        } catch (e) {
+          console.warn("[webhook] email claim failed", e?.message || e);
+          claimedEmail = false;
         }
-      } catch {}
+      }
 
-      if (email && files.length > 0 && !alreadyFulfilled) {
+      if (email && files.length > 0 && claimedEmail) {
         try {
           await sendDownloadEmail({
             to: email,
@@ -892,19 +903,21 @@ async function processStripeEventRecord(stripeEventRowId) {
             files,
             expiresHours: 24,
           });
+        } catch (e) {
+          // Email failures should never cause Stripe retries.
+          console.error("[webhook] email send failed", e?.stack || e);
+          // Best-effort rollback so a retry can attempt sending again.
           try {
             if (supabase && PURCHASES_TABLE) {
               await supabase
                 .from(PURCHASES_TABLE)
-                .update({ fulfilled: true })
-                .eq("stripe_checkout_session_id", session.id);
+                .update({ fulfilled: false })
+                .eq("stripe_checkout_session_id", session.id)
+                .eq("fulfilled", true);
             }
-          } catch (e) {
-            console.warn("[webhook] failed to set fulfilled flag", e?.message || e);
+          } catch (revertErr) {
+            console.warn("[webhook] failed to rollback fulfilled flag", revertErr?.message || revertErr);
           }
-        } catch (e) {
-          // Email failures should never cause Stripe retries.
-          console.error("[webhook] email send failed", e?.stack || e);
         }
       }
 
@@ -1076,8 +1089,8 @@ app.post(
         error: persist.error?.message || persist.error,
         stack: persist.error?.stack || null,
       });
-      // Still ACK to avoid Stripe retry storm; we can’t recover without persistence anyway.
-      return res.status(200).send();
+      // IMPORTANT: if persistence fails, return 500 so Stripe retries.
+      return res.status(500).send();
     }
     if (persist.duplicate) {
       console.info("[webhook] duplicate event (db) ignored", { eventId, eventType });
@@ -1293,6 +1306,7 @@ app.post("/api/checkout/create", checkoutLimiter, async (req, res) => {
         sunset: process.env.STRIPE_PRICE_ID_SUNSET,
         29: process.env.STRIPE_PRICE_ID_29,
         "35": process.env.STRIPE_PRICE_ID_35, // Cloudy Days
+        "40": process.env.STRIPE_PRICE_ID_40, // Velvet
       };
       let val = map[id];
       if (!val) {

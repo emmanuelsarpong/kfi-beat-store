@@ -3,6 +3,7 @@
  * Used for syncing beats table and for safe availability defaults.
  */
 export const STORE_BEATS = [
+  { id: "40", title: "Velvet" },
   { id: "39", title: "Sunrise" },
   { id: "38", title: "Give Me Love" },
   { id: "37", title: "DND" },

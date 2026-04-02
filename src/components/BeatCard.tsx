@@ -269,7 +269,7 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
           {(() => {
             // Deterministic gradient pick based on id numeric fallback to hash.
             const num = parseInt(beat.id, 10);
-            const paletteCount = 20; // defined in index.css
+            const paletteCount = 21; // defined in index.css (grad-beat-1..21)
             const forced = Number(beat.coverVariant);
             const idx =
               Number.isFinite(forced) && forced > 0
@@ -464,7 +464,7 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
                 <div className="relative w-24 h-20 sm:w-28 sm:h-24 rounded-xl overflow-hidden shadow-lg shrink-0">
                   {(() => {
                     const num = parseInt(beat.id, 10);
-                    const paletteCount = 20;
+                    const paletteCount = 21;
                     const forced = Number(beat.coverVariant);
                     const idx =
                       Number.isFinite(forced) && forced > 0
