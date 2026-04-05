@@ -6,6 +6,15 @@
 
 @layer base {
   :root {
+    --z-base: 0;
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-nav-overlay: 700;
+    --z-nav-panel: 750;
+    --z-overlay: 900;
+    --z-modal: 1000;
+    --z-toast: 1100;
+
     --background: 0 0% 0%;
     --foreground: 0 0% 100%;
 
@@ -55,6 +64,40 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .layer-base {
+    z-index: var(--z-base);
+  }
+
+  .layer-dropdown {
+    z-index: var(--z-dropdown);
+  }
+
+  .layer-sticky {
+    z-index: var(--z-sticky);
+  }
+
+  .layer-nav-overlay {
+    z-index: var(--z-nav-overlay);
+  }
+
+  .layer-nav-panel {
+    z-index: var(--z-nav-panel);
+  }
+
+  .layer-overlay {
+    z-index: var(--z-overlay);
+  }
+
+  .layer-modal {
+    z-index: var(--z-modal);
+  }
+
+  .layer-toast {
+    z-index: var(--z-toast);
   }
 }
 

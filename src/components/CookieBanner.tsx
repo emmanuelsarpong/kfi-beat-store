@@ -23,7 +23,7 @@ const CookieBanner = () => {
 
   if (!open) return null;
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4">
+    <div className="fixed bottom-0 left-0 right-0 p-4 layer-sticky">
       <div className="mx-auto max-w-3xl bg-zinc-950/95 border border-zinc-800 rounded-xl p-4 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <p className="text-sm text-zinc-300">

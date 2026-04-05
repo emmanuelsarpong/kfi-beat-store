@@ -1,4 +1,5 @@
 import React from "react";
+import { Instagram } from "lucide-react";
 import kfiLogo from "@/assets/logo.png";
 import MiniPlayer from "@/components/MiniPlayer";
 
@@ -35,8 +36,9 @@ const Footer = () => {
                   href="https://instagram.com/thisiskfi"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="footer-link subtle"
+                  className="footer-link subtle inline-flex items-center gap-1.5"
                 >
+                  <Instagram className="h-3.5 w-3.5" />
                   Instagram
                 </a>
                 <span className="text-zinc-600">/</span>

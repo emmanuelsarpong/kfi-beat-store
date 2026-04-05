@@ -1,11 +1,11 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import BeatCard from "@/components/BeatCard";
+import FavoriteBeatRow from "@/components/FavoriteBeatRow";
 import { useFavorites } from "@/hooks/useFavorites";
 import { beats as allBeats } from "@/data/beats";
 
 const FavoritesPage = () => {
-  const { favorites, ready } = useFavorites();
+  const { favorites, ready, remove } = useFavorites();
   const favoriteBeats = favorites
     .map((f) => allBeats.find((b) => b.id === f.id))
     .filter((b): b is (typeof allBeats)[number] => Boolean(b));
@@ -20,8 +20,9 @@ const FavoritesPage = () => {
               ❤️ Your Favorites
             </h1>
             <p className="text-zinc-400 text-sm sm:text-base max-w-2xl mx-auto">
-              Quickly revisit the beats you saved this session. This list clears
-              when you close your browser.
+              Save beats here while you decide. Cart is separate — use it when
+              you are ready to license and pay. This list clears when you close
+              your browser.
             </p>
           </div>
           {!ready ? (
@@ -31,10 +32,13 @@ const FavoritesPage = () => {
               No favorites yet. Tap the heart on any beat to add it here.
             </div>
           ) : (
-            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-6 sm:gap-y-14 sm:gap-x-8">
+            <div className="max-w-3xl mx-auto flex flex-col gap-4 sm:gap-5">
               {favoriteBeats.map((beat) => (
                 <div key={beat.id} className="reveal">
-                  <BeatCard beat={beat} />
+                  <FavoriteBeatRow
+                    beat={beat}
+                    onRemoveFavorite={() => remove(beat.id)}
+                  />
                 </div>
               ))}
             </div>

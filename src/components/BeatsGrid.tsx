@@ -1,13 +1,14 @@
 import React from "react";
 import BeatCard from "./BeatCard";
 import { beats as beatsData } from "@/data/beats";
-
-// Show the 6 most recently uploaded beats by descending numeric id (newest first)
-const beats = [...beatsData]
-  .sort((a, b) => Number(b.id) - Number(a.id))
-  .slice(0, 6);
+import { useBeats } from "@/hooks/useBeats";
 
 const BeatsGrid = () => {
+  const { beats } = useBeats();
+  const latestBeats = [...(beats ?? beatsData)]
+    .sort((a, b) => Number(b.id) - Number(a.id))
+    .slice(0, 6);
+
   return (
     <section id="beats" className="py-16 px-4 scroll-mt-24">
       <div className="container mx-auto max-w-7xl p-0 md:px-4">
@@ -23,7 +24,7 @@ const BeatsGrid = () => {
 
         {/* Restored simple responsive grid (6 cards) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 md:gap-10">
-          {beats.map((beat) => (
+          {latestBeats.map((beat) => (
             <div key={beat.id} className="reveal">
               <BeatCard beat={beat} />
             </div>

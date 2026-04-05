@@ -19,10 +19,11 @@ const Modal: React.FC<ModalProps> = ({ title, onClose, children }) => {
 
   // In non-browser environments, don't attempt to render the modal
   if (typeof document === "undefined") return null;
+  const modalRoot = document.getElementById("modal-root") ?? document.body;
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 bg-[rgba(0,0,0,0.55)] backdrop-blur-[12px]"
+      className="fixed inset-0 layer-modal flex items-center justify-center p-4 sm:p-6 bg-[rgba(0,0,0,0.55)] backdrop-blur-[12px]"
       role="dialog"
       aria-modal="true"
     >
@@ -58,7 +59,7 @@ const Modal: React.FC<ModalProps> = ({ title, onClose, children }) => {
         </div>
       </div>
     </div>,
-    document.body
+    modalRoot
   );
 };
 

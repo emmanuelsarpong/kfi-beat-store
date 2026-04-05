@@ -13,6 +13,7 @@ import { Suspense, lazy } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 const Index = lazy(() => import("./pages/Index"));
 const Store = lazy(() => import("./pages/store"));
+const BeatDetail = lazy(() => import("./pages/BeatDetail"));
 const Download = lazy(() => import("./pages/Download"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -23,6 +24,8 @@ import MiniPlayer from "./components/MiniPlayer";
 import { PlayerProvider } from "@/hooks/PlayerProvider";
 import CookieBanner from "./components/CookieBanner";
 import { FavoritesProvider } from "@/hooks/useFavorites";
+import { CartProvider } from "@/hooks/useCart";
+import CartDrawer from "@/components/CartDrawer";
 import ScrollToHash from "@/components/ScrollToHash";
 
 const queryClient = new QueryClient();
@@ -95,31 +98,35 @@ const App = () => (
     <TooltipProvider>
       <PlayerProvider>
         <FavoritesProvider>
-          <Toaster />
-          <Sonner />
-          <Router>
-            <Suspense
-              fallback={<LoadingSpinner size="lg" className="min-h-screen" />}
-            >
-              <RouteFade>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/store" element={<Store />} />
-                  <Route path="/favorites" element={<Favorites />} />
-                  <Route path="/download" element={<Download />} />
-                  <Route path="/privacy" element={<Privacy />} />
-                  <Route path="/terms" element={<Terms />} />
-                  <Route path="/licensing" element={<Licensing />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </RouteFade>
-            </Suspense>
-            <ScrollToHash />
-            <RevealManager />
-            {/* Mobile bottom nav removed for responsive website design */}
-          </Router>
-          <CookieBanner />
+          <CartProvider>
+            <Toaster />
+            <Sonner />
+            <Router>
+              <CartDrawer />
+              <Suspense
+                fallback={<LoadingSpinner size="lg" className="min-h-screen" />}
+              >
+                <RouteFade>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/store" element={<Store />} />
+                    <Route path="/beats/:slug" element={<BeatDetail />} />
+                    <Route path="/favorites" element={<Favorites />} />
+                    <Route path="/download" element={<Download />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/licensing" element={<Licensing />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </RouteFade>
+              </Suspense>
+              <ScrollToHash />
+              <RevealManager />
+              {/* Mobile bottom nav removed for responsive website design */}
+            </Router>
+            <CookieBanner />
+          </CartProvider>
         </FavoritesProvider>
       </PlayerProvider>
     </TooltipProvider>

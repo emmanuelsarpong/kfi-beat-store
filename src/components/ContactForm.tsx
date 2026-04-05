@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Mail, Send } from "lucide-react";
+import { Instagram, Mail, Send } from "lucide-react";
 import axios from "axios";
 
 const serverUrl = import.meta.env.VITE_SERVER_URL as string | undefined;
@@ -169,8 +169,9 @@ const ContactForm = () => {
               href="https://instagram.com/thisiskfi"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-white hover:text-gray-300 transition-colors font-medium"
+              className="text-white hover:text-gray-300 transition-colors font-medium inline-flex items-center gap-2"
             >
+              <Instagram className="h-4 w-4" />
               @thisiskfi
             </a>
           </div>
