@@ -886,7 +886,8 @@ async function sendOrderDownloadEmail({ to, sections, expiresHours = 24 }) {
 
 async function claimOrderEmailSend(sessionId, logPrefix) {
   const sid = String(sessionId || "").trim();
-  if (!sid) return { shouldSend: false, claimedInMemory: false };
+  if (!sid)
+    return { shouldSend: false, claimedInMemory: false, claimedInSet: false };
 
   if (supabase) {
     try {
@@ -894,10 +895,15 @@ async function claimOrderEmailSend(sessionId, logPrefix) {
         .from("checkout_order_emails")
         .insert({ stripe_checkout_session_id: sid });
       if (!insErr) {
-        return { shouldSend: true, claimedInMemory: false };
+        SENT_SESSIONS.add(sid);
+        return { shouldSend: true, claimedInMemory: false, claimedInSet: true };
       }
       if (String(insErr.code) === "23505") {
-        return { shouldSend: false, claimedInMemory: false };
+        return {
+          shouldSend: false,
+          claimedInMemory: false,
+          claimedInSet: false,
+        };
       }
       console.warn(`${logPrefix} checkout_order_emails insert`, insErr);
     } catch (e) {
@@ -907,13 +913,18 @@ async function claimOrderEmailSend(sessionId, logPrefix) {
 
   if (!SENT_SESSIONS.has(sid)) {
     SENT_SESSIONS.add(sid);
-    return { shouldSend: true, claimedInMemory: true };
+    return { shouldSend: true, claimedInMemory: true, claimedInSet: true };
   }
 
-  return { shouldSend: false, claimedInMemory: false };
+  return { shouldSend: false, claimedInMemory: false, claimedInSet: false };
 }
 
-async function releaseOrderEmailSend(sessionId, claimedInMemory, logPrefix) {
+async function releaseOrderEmailSend(
+  sessionId,
+  claimedInMemory,
+  claimedInSet,
+  logPrefix
+) {
   const sid = String(sessionId || "").trim();
   if (!sid) return;
   try {
@@ -923,7 +934,7 @@ async function releaseOrderEmailSend(sessionId, claimedInMemory, logPrefix) {
         .delete()
         .eq("stripe_checkout_session_id", sid);
     }
-    if (claimedInMemory) {
+    if (claimedInSet) {
       SENT_SESSIONS.delete(sid);
     }
   } catch (revertErr) {
@@ -1223,7 +1234,7 @@ async function fulfillStripeCheckoutSession(session, full, email) {
     });
   }
 
-  const { shouldSend, claimedInMemory } = await claimOrderEmailSend(
+  const { shouldSend, claimedInMemory, claimedInSet } = await claimOrderEmailSend(
     session.id,
     "[webhook]"
   );
@@ -1247,7 +1258,12 @@ async function fulfillStripeCheckoutSession(session, full, email) {
       }
     } catch (e) {
       console.error("[webhook] email send failed", e?.stack || e);
-      await releaseOrderEmailSend(session.id, claimedInMemory, "[webhook]");
+      await releaseOrderEmailSend(
+        session.id,
+        claimedInMemory,
+        claimedInSet,
+        "[webhook]"
+      );
     }
   }
 }
@@ -1967,13 +1983,16 @@ app.get("/api/downloads/session/:sessionId", async (req, res) => {
     }
 
     let claimedSessionEmailInMemory = false;
+    let claimedSessionEmailInSet = false;
     try {
       if (customerEmail && itemsOut.some((x) => x.files?.length)) {
-        const { shouldSend, claimedInMemory } = await claimOrderEmailSend(
+        const { shouldSend, claimedInMemory, claimedInSet } =
+          await claimOrderEmailSend(
           sessionId,
           "[downloads]"
-        );
+          );
         claimedSessionEmailInMemory = claimedInMemory;
+        claimedSessionEmailInSet = claimedInSet;
         if (!shouldSend) {
           return res.json({
             sessionId,
@@ -2007,6 +2026,7 @@ app.get("/api/downloads/session/:sessionId", async (req, res) => {
       await releaseOrderEmailSend(
         sessionId,
         claimedSessionEmailInMemory,
+        claimedSessionEmailInSet,
         "[downloads]"
       );
     }
@@ -2076,13 +2096,16 @@ app.get("/api/downloads/:beat/:sessionId", async (req, res) => {
         .json({ error: `No files found for ${usedFolder || beat}` });
     }
     let claimedFallbackEmailInMemory = false;
+    let claimedFallbackEmailInSet = false;
     try {
       if (customerEmail && files.length > 0) {
-        const { shouldSend, claimedInMemory } = await claimOrderEmailSend(
+        const { shouldSend, claimedInMemory, claimedInSet } =
+          await claimOrderEmailSend(
           sessionId,
           "[downloads]"
-        );
+          );
         claimedFallbackEmailInMemory = claimedInMemory;
+        claimedFallbackEmailInSet = claimedInSet;
         if (shouldSend) {
           await sendDownloadEmail({
             to: customerEmail,
@@ -2104,6 +2127,7 @@ app.get("/api/downloads/:beat/:sessionId", async (req, res) => {
       await releaseOrderEmailSend(
         sessionId,
         claimedFallbackEmailInMemory,
+        claimedFallbackEmailInSet,
         "[downloads]"
       );
     }
