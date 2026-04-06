@@ -110,6 +110,7 @@ export const beats: BeatData[] = [
     genre: "Melodic Trap",
     bpm: 120,
     mood: "Introspective",
+    key: "A# min",
     price: 350.0,
     previewUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/crown/Crown.mp3",
