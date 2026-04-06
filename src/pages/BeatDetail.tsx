@@ -243,7 +243,7 @@ export default function BeatDetail() {
                     className="w-full h-12 rounded-2xl font-semibold text-white bg-[linear-gradient(135deg,#131313,#050505)] border border-white/15 hover:border-white/25 hover:-translate-y-[1px] transition-transform disabled:opacity-60 disabled:hover:translate-y-0"
                   >
                     <ShoppingCart className="h-4 w-4 mr-2" />
-                    {currentBeat.sold ? "Exclusive Sold" : "Buy or Lease"}
+                    {currentBeat.sold ? "Exclusive Sold" : "Buy license"}
                   </Button>
                   <Button
                     type="button"
