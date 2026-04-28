@@ -122,9 +122,9 @@ export default function BeatDetail() {
   const licenseOptions = getBeatLicenseOptions(currentBeat);
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white flex flex-col">
       <Header />
-      <main className="relative">
+      <main className="relative flex-1">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-[radial-gradient(circle_at_top,rgba(148,163,255,0.12),transparent_48%),radial-gradient(circle_at_20%_18%,rgba(239,68,68,0.14),transparent_34%)]" />
 
         <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 sm:pb-20">

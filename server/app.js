@@ -1556,6 +1556,18 @@ async function resolveExclusiveStripePriceId(id) {
     const envKey = `STRIPE_PRICE_ID_${String(id).toUpperCase()}`;
     val = process.env[envKey];
   }
+  // Fallback to title alias env key, e.g. STRIPE_PRICE_ID_BROWN_SKIN
+  if (!val) {
+    const beatTitle = getStoreBeatTitle(id);
+    if (beatTitle) {
+      const titleKey = `STRIPE_PRICE_ID_${String(beatTitle)
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "")}`;
+      val = process.env[titleKey];
+    }
+  }
   if (!val) return undefined;
   if (typeof val === "string" && val.startsWith("price_")) return val;
   if (typeof val === "string" && val.startsWith("prod_")) {
@@ -1571,7 +1583,11 @@ async function resolveExclusiveStripePriceId(id) {
       });
       if (prices?.data?.[0]?.id) return prices.data[0].id;
     } catch (e) {
-      console.error("[checkout] failed to resolve price from product", e);
+      console.error("[checkout] failed to resolve price from product", {
+        beatId: String(id),
+        configuredValue: val,
+        error: e?.message || e,
+      });
       return undefined;
     }
   }
@@ -1804,9 +1820,18 @@ app.post("/api/checkout/create", checkoutLimiter, async (req, res) => {
       try {
         priceObject = await stripe.prices.retrieve(line.priceId);
       } catch (e) {
-        console.error("[checkout] price retrieve failed", e);
-        return res.status(503).json({
-          error: "Unable to verify pricing with Stripe. Try again shortly.",
+        const msg = String(e?.message || "");
+        const isMissing = /No such price|resource_missing/i.test(msg);
+        console.error("[checkout] price retrieve failed", {
+          beatId: line.beatId,
+          licenseType: line.normalizedLicenseType,
+          priceId: line.priceId,
+          error: msg,
+        });
+        return res.status(isMissing ? 400 : 503).json({
+          error: isMissing
+            ? "Stripe price is invalid for this beat. Check STRIPE_PRICE_ID mapping for this beat."
+            : "Unable to verify pricing with Stripe. Try again shortly.",
         });
       }
       const m = priceObject?.recurring ? "subscription" : "payment";
