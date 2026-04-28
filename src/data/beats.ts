@@ -45,6 +45,20 @@ const VITE_SERVER_URL: string | undefined =
     : undefined;
 
 export const beats: BeatData[] = [
+  // Newest: Brown Skin
+  {
+    id: "41",
+    title: "Brown Skin",
+    genre: "RnB",
+    bpm: 110,
+    mood: "Vibey",
+    key: "F min",
+    price: 400.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/brown%20skin/Brown%20Skin.mp3",
+    audioUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/brown%20skin/Brown%20Skin.mp3",
+  },
   // Newest: Velvet
   {
     id: "40",
