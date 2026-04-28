@@ -178,7 +178,7 @@ const BeatCardBase = ({ beat }: BeatCardProps) => {
           <div className="relative overflow-hidden rounded-t-xl group/cover">
             {(() => {
               const num = parseInt(beat.id, 10);
-              const paletteCount = 21;
+              const paletteCount = 22;
               const forced = Number(beat.coverVariant);
               const idx =
                 Number.isFinite(forced) && forced > 0

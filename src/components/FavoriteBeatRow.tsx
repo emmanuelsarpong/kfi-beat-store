@@ -26,12 +26,16 @@ export default function FavoriteBeatRow({
   const cartItem = getItem(beat.id);
 
   const num = parseInt(beat.id, 10);
-  const paletteCount = 21;
-  const idx = Number.isFinite(num)
-    ? (num - 1) % paletteCount
-    : Math.abs(
-        Array.from(beat.id).reduce((a, c) => a + c.charCodeAt(0), 0)
-      ) % paletteCount;
+  const paletteCount = 22;
+  const forced = Number(beat.coverVariant);
+  const idx =
+    Number.isFinite(forced) && forced > 0
+      ? (Math.floor(forced) - 1) % paletteCount
+      : Number.isFinite(num)
+        ? (num - 1) % paletteCount
+        : Math.abs(
+            Array.from(beat.id).reduce((a, c) => a + c.charCodeAt(0), 0)
+          ) % paletteCount;
   const gradClass = `grad-beat-${idx + 1}`;
 
   const handlePlay = (e: React.MouseEvent) => {

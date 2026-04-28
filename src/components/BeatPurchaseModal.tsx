@@ -105,7 +105,7 @@ export default function BeatPurchaseModal({
             <div className="relative w-24 h-20 sm:w-28 sm:h-24 rounded-xl overflow-hidden shadow-lg shrink-0">
               {(() => {
                 const num = parseInt(beat.id, 10);
-                const paletteCount = 21;
+                const paletteCount = 22;
                 const forced = Number(beat.coverVariant);
                 const idx =
                   Number.isFinite(forced) && forced > 0

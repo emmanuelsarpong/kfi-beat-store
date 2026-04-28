@@ -19,7 +19,7 @@ import { MIN_LICENSE_PRICE_DISPLAY } from "@/config/licenses";
 
 function BeatArtwork({ beat }: { beat: BeatData }) {
   const num = parseInt(beat.id, 10);
-  const paletteCount = 21;
+  const paletteCount = 22;
   const forced = Number(beat.coverVariant);
   const idx =
     Number.isFinite(forced) && forced > 0

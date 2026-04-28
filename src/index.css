@@ -1129,6 +1129,18 @@
     #e88896 100%
   );
 }
+/* Brown Skin / warm cocoa undertone (used via coverVariant: 22) */
+.grad-beat-22 {
+  background: linear-gradient(
+    145deg,
+    #1a0f0a 0%,
+    #3a2418 24%,
+    #6b3f27 50%,
+    #8f5a3c 72%,
+    #b77a56 88%,
+    #d8a178 100%
+  );
+}
 
 /* Soft hover scale similar to image variant */
 .grad-beat-base {

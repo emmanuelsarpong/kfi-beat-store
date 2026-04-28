@@ -54,6 +54,7 @@ export const beats: BeatData[] = [
     mood: "Vibey",
     key: "F min",
     price: 400.0,
+    coverVariant: 22,
     previewUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/brown%20skin/Brown%20Skin.mp3",
     audioUrl:

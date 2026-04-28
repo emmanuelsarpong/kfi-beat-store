@@ -27,7 +27,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 function getGradientClass(item: CartItem) {
-  const paletteCount = 21;
+  const paletteCount = 22;
   const forced = Number(item.coverVariant);
   if (Number.isFinite(forced) && forced > 0) {
     return `grad-beat-${(Math.floor(forced) - 1) % paletteCount + 1}`;
