@@ -19,20 +19,30 @@ function formatTime(seconds: number) {
   return `${mins}:${secs}`;
 }
 
-const PLAYER_EVENT = "kfi:waveform-play";
-
 export default function WaveformPlayer({ beat }: WaveformPlayerProps) {
   const waveformRef = useRef<HTMLDivElement | null>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const { pause: pauseGlobalPlayer } = usePlayer();
+  const {
+    current,
+    isPlaying: globalIsPlaying,
+    currentTime: globalCurrentTime,
+    duration: globalDuration,
+    toggle,
+    seek,
+    playTrack,
+  } = usePlayer();
   const [audioUrl, setAudioUrl] = useState(beat.previewUrl || beat.audioUrl || "");
   const [isResolving, setIsResolving] = useState(true);
   const [isReady, setIsReady] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [localDuration, setLocalDuration] = useState(0);
   const [hoverRatio, setHoverRatio] = useState<number | null>(null);
+  const isCurrent = current?.id === beat.id;
+  const isPlaying = isCurrent && globalIsPlaying;
+  const currentTime = isCurrent ? globalCurrentTime : 0;
+  const duration = isCurrent
+    ? globalDuration || localDuration
+    : localDuration;
   const hoverTime = useMemo(() => {
     if (hoverRatio == null || duration <= 0) return null;
     return hoverRatio * duration;
@@ -42,8 +52,7 @@ export default function WaveformPlayer({ beat }: WaveformPlayerProps) {
     let cancelled = false;
     setIsResolving(true);
     setIsReady(false);
-    setCurrentTime(0);
-    setDuration(0);
+    setLocalDuration(0);
     setAudioUrl(beat.previewUrl || beat.audioUrl || "");
 
     getPlayableUrlForBeat({
@@ -90,63 +99,59 @@ export default function WaveformPlayer({ beat }: WaveformPlayerProps) {
     wavesurferRef.current = wavesurfer;
 
     const handleReady = () => {
-      setDuration(wavesurfer.getDuration());
-      setCurrentTime(wavesurfer.getCurrentTime());
+      setLocalDuration(wavesurfer.getDuration());
       setIsReady(true);
       setIsResolving(false);
-    };
-    const handleTimeUpdate = (time: number) => {
-      setCurrentTime(time);
-    };
-    const handlePlay = () => {
-      pauseGlobalPlayer();
-      window.dispatchEvent(
-        new CustomEvent(PLAYER_EVENT, { detail: { beatId: beat.id } })
-      );
-      setIsPlaying(true);
-    };
-    const handlePause = () => {
-      setIsPlaying(false);
-    };
-    const handleFinish = () => {
-      setIsPlaying(false);
-      setCurrentTime(wavesurfer.getDuration());
     };
     const handleError = (error: unknown) => {
       console.error("[waveform] load failed", error);
       setIsResolving(false);
       setIsReady(false);
     };
-
-    wavesurfer.on("ready", handleReady);
-    wavesurfer.on("timeupdate", handleTimeUpdate);
-    wavesurfer.on("play", handlePlay);
-    wavesurfer.on("pause", handlePause);
-    wavesurfer.on("finish", handleFinish);
-    wavesurfer.on("error", handleError);
-
-    return () => {
-      wavesurfer.destroy();
-      wavesurferRef.current = null;
-    };
-  }, [audioUrl, beat.id, pauseGlobalPlayer]);
-
-  useEffect(() => {
-    const handleExternalPlay = (event: Event) => {
-      const customEvent = event as CustomEvent<{ beatId?: string }>;
-      if (customEvent.detail?.beatId !== beat.id) {
-        wavesurferRef.current?.pause();
+    const startGlobalPlayback = (startAt?: number) => {
+      playTrack({
+        id: beat.id,
+        title: beat.title,
+        audioUrl,
+        coverImage: beat.coverImage,
+      });
+      if (typeof startAt === "number" && Number.isFinite(startAt)) {
+        window.setTimeout(() => seek(startAt), 0);
       }
     };
 
-    window.addEventListener(PLAYER_EVENT, handleExternalPlay as EventListener);
+    wavesurfer.on("ready", handleReady);
+    wavesurfer.on("play", () => {
+      // WaveSurfer has its own media element; never let it become the source of truth.
+      // All audible playback must go through the global player used by the footer.
+      const time = wavesurfer.getCurrentTime();
+      wavesurfer.pause();
+      if (!isCurrent || !globalIsPlaying) startGlobalPlayback(time);
+    });
+    wavesurfer.on("interaction", (time: number) => {
+      if (isCurrent) {
+        seek(time);
+        return;
+      }
+      startGlobalPlayback(time);
+    });
+    wavesurfer.on("error", handleError);
+
     return () => {
-      window.removeEventListener(
-        PLAYER_EVENT,
-        handleExternalPlay as EventListener
-      );
+      wavesurfer.pause();
+      wavesurfer.destroy();
+      wavesurferRef.current = null;
     };
-  }, [beat.id]);
+  }, [
+    audioUrl,
+    beat.coverImage,
+    beat.id,
+    beat.title,
+    globalIsPlaying,
+    isCurrent,
+    playTrack,
+    seek,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -154,9 +159,30 @@ export default function WaveformPlayer({ beat }: WaveformPlayerProps) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isCurrent) return;
+    const ws = wavesurferRef.current;
+    if (!ws || !isReady) return;
+    if (ws.isPlaying()) ws.pause();
+    const wsTime = ws.getCurrentTime();
+    if (Math.abs(wsTime - globalCurrentTime) > 0.15) {
+      ws.setTime(globalCurrentTime);
+    }
+  }, [globalCurrentTime, isCurrent, isReady]);
+
   const togglePlayback = async () => {
+    if (!audioUrl) return;
     try {
-      await wavesurferRef.current?.playPause();
+      if (isCurrent) {
+        toggle();
+        return;
+      }
+      playTrack({
+        id: beat.id,
+        title: beat.title,
+        audioUrl,
+        coverImage: beat.coverImage,
+      });
     } catch (error) {
       console.error("[waveform] play failed", error);
     }

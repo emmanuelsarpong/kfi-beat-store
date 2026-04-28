@@ -38,6 +38,12 @@ type State = {
 let playToken = 0;
 export const getPlayToken = () => playToken;
 
+declare global {
+  interface Window {
+    __kfiPlayerStore?: ReturnType<typeof create<State>>;
+  }
+}
+
 function resolveUrl(id: string) {
   // Look up the actual URL from allSongs
   const song = allSongs.find((s) => s.id === id);
@@ -57,7 +63,8 @@ function resolveCoverImage(id: string) {
   return beat?.coverImage ?? null;
 }
 
-export const usePlayerStore = create<State>((set, get) => ({
+function createPlayerStore() {
+  return create<State>((set, get) => ({
   currentId: () => get().id,
   id: null,
   title: null,
@@ -165,3 +172,9 @@ export const usePlayerStore = create<State>((set, get) => ({
   seek: (t) => set({ seekTime: t }),
   setQueue: (q) => set({ queue: q }),
 }));
+}
+
+export const usePlayerStore =
+  typeof window !== "undefined"
+    ? (window.__kfiPlayerStore ??= createPlayerStore())
+    : createPlayerStore();
