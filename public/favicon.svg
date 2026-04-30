@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="KFI">
+  <rect width="64" height="64" rx="9" fill="#050505" />
+  <text
+    x="50%"
+    y="50%"
+    fill="#ffffff"
+    font-family="Inter, Arial, Helvetica, sans-serif"
+    font-size="20"
+    font-weight="800"
+    letter-spacing="-1"
+    text-anchor="middle"
+    dominant-baseline="central"
+  >KFI</text>
+</svg>
