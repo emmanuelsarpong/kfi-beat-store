@@ -296,6 +296,10 @@ const STRIPE_ID_TO_BEAT = (() => {
     if (!k.startsWith("STRIPE_PRICE_ID_")) continue;
     if (!v) continue;
     const beatKey = k.replace("STRIPE_PRICE_ID_", "").toLowerCase();
+    const existing = map.get(v);
+    if (existing && /^\d+$/.test(String(existing)) && !/^\d+$/.test(beatKey)) {
+      continue;
+    }
     map.set(v, beatKey);
   }
   return map;

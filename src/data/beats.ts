@@ -45,6 +45,20 @@ const VITE_SERVER_URL: string | undefined =
     : undefined;
 
 export const beats: BeatData[] = [
+  // Newest: Breeze
+  {
+    id: "42",
+    title: "Breeze",
+    genre: "Afrobeats",
+    bpm: 101,
+    mood: "Tropical",
+    key: "D# min",
+    price: 400.0,
+    previewUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/breeze/Breeze.mp3",
+    audioUrl:
+      "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/breeze/Breeze.mp3",
+  },
   // Newest: Brown Skin
   {
     id: "41",
