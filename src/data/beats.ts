@@ -49,11 +49,12 @@ export const beats: BeatData[] = [
   {
     id: "42",
     title: "Breeze",
-    genre: "Afrobeats",
+    genre: "Afrobeats / Soca",
     bpm: 101,
     mood: "Tropical",
     key: "D# min",
     price: 400.0,
+    coverVariant: 16,
     previewUrl:
       "https://dohbpspufehpuyfskahm.supabase.co/storage/v1/object/public/beats/breeze/Breeze.mp3",
     audioUrl:
