@@ -178,4 +178,109 @@ describe("API", () => {
     expect(names).toContain("stems.zip");
     expect(names).not.toContain("Lucid.mp3");
   });
+
+  it("POST /api/checkout/create sends beat+license text and no images", async () => {
+    const created: { payload?: Record<string, unknown> } = {};
+    vi.doMock("stripe", () => {
+      return {
+        default: class MockStripe {
+          constructor(_key: string, _opts?: Record<string, unknown>) {}
+          prices = {
+            retrieve: async (id: string) => ({
+              id,
+              currency: "usd",
+              unit_amount: 9900,
+              product: "prod_premium",
+              recurring: null,
+            }),
+          };
+          checkout = {
+            sessions: {
+              create: async (payload: Record<string, unknown>) => {
+                created.payload = payload;
+                return {
+                  id: "cs_test_no_art",
+                  url: "https://checkout.stripe.com/c/pay/cs_test_no_art",
+                };
+              },
+            },
+          };
+        },
+      };
+    });
+    vi.doMock("@supabase/supabase-js", () => {
+      return {
+        createClient: () => ({
+          from: () => ({
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({
+                  data: { sold: false, exclusive_available: true },
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    process.env.STRIPE_SECRET_KEY =
+      process.env.STRIPE_SECRET_KEY || "sk_test_dummy";
+    process.env.STRIPE_PRICE_PREMIUM =
+      process.env.STRIPE_PRICE_PREMIUM || "price_premium_test";
+    process.env.SUPABASE_URL =
+      process.env.SUPABASE_URL || "https://example.supabase.co";
+    process.env.SUPABASE_SERVICE_ROLE_KEY =
+      process.env.SUPABASE_SERVICE_ROLE_KEY || "service_key";
+
+    const app = await importFreshApp({ preserveMocks: true });
+    const res = await request(app)
+      .post("/api/checkout/create")
+      .send({
+        beatId: "42",
+        beatTitle: "Breeze",
+        licenseType: "premium",
+        returnUrl: "http://localhost:8080",
+      })
+      .set("Content-Type", "application/json");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("url");
+    expect(created.payload).toBeTruthy();
+
+    const payload = created.payload as {
+      line_items: Array<{
+        price?: string;
+        quantity: number;
+        price_data?: {
+          currency: string;
+          unit_amount?: number;
+          product_data?: Record<string, unknown>;
+        };
+      }>;
+      metadata: Record<string, string>;
+    };
+    const item = payload.line_items[0];
+    expect(item.price).toBeUndefined();
+    expect(item.quantity).toBe(1);
+    expect(item.price_data?.currency).toBe("usd");
+    expect(item.price_data?.unit_amount).toBe(9900);
+    expect(item.price_data?.product_data).toMatchObject({
+      name: "Breeze · Premium License",
+      description: "WAV · Commercial streaming · Non-exclusive",
+    });
+    expect(item.price_data?.product_data).not.toHaveProperty("images");
+    expect(JSON.stringify(payload)).not.toMatch(/"images"\s*:/);
+    expect(payload.metadata.beat_id).toBe("42");
+    expect(payload.metadata.beat_title).toBe("Breeze");
+    expect(payload.metadata.license_type).toBe("premium");
+    const cart = JSON.parse(payload.metadata.cart_json);
+    expect(cart[0]).toMatchObject({
+      beat_id: "42",
+      beat_title: "Breeze",
+      license_type: "premium",
+      stripe_price_id: process.env.STRIPE_PRICE_PREMIUM,
+    });
+  });
 });

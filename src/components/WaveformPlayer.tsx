@@ -1,23 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
 import { Pause, Play } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { getPlayableUrlForBeat } from "@/lib/audio";
 import { usePlayer } from "@/hooks/usePlayer";
+import { formatTime } from "@/lib/catalog";
+import { getAccentColor } from "@/lib/artwork";
 import type { BeatData } from "@/data/beats";
 
 type WaveformPlayerProps = {
   beat: BeatData;
 };
-
-function formatTime(seconds: number) {
-  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60)
-    .toString()
-    .padStart(2, "0");
-  return `${mins}:${secs}`;
-}
 
 export default function WaveformPlayer({ beat }: WaveformPlayerProps) {
   const waveformRef = useRef<HTMLDivElement | null>(null);
@@ -40,9 +32,8 @@ export default function WaveformPlayer({ beat }: WaveformPlayerProps) {
   const isCurrent = current?.id === beat.id;
   const isPlaying = isCurrent && globalIsPlaying;
   const currentTime = isCurrent ? globalCurrentTime : 0;
-  const duration = isCurrent
-    ? globalDuration || localDuration
-    : localDuration;
+  const duration = isCurrent ? globalDuration || localDuration : localDuration;
+  const accent = getAccentColor(beat);
   const hoverTime = useMemo(() => {
     if (hoverRatio == null || duration <= 0) return null;
     return hoverRatio * duration;
@@ -79,22 +70,23 @@ export default function WaveformPlayer({ beat }: WaveformPlayerProps) {
   useEffect(() => {
     if (!waveformRef.current || !audioUrl) return;
 
+    const height = window.matchMedia("(min-width: 1024px)").matches ? 88 : 56;
     const wavesurfer = WaveSurfer.create({
       container: waveformRef.current,
       url: audioUrl,
-      height: 152,
+      height,
       normalize: true,
-      cursorWidth: 2,
-      cursorColor: "rgba(255,255,255,0.72)",
-      waveColor: "rgba(255,255,255,0.12)",
-      progressColor: "#f4b860",
+      cursorWidth: 1,
+      cursorColor: "rgba(17,17,17,0.45)",
+      waveColor: "rgba(17,17,17,0.16)",
+      progressColor: accent,
       dragToSeek: true,
       interact: true,
       autoScroll: false,
       autoCenter: false,
-      barWidth: undefined,
-      barGap: undefined,
-      barRadius: 0,
+      barWidth: 2,
+      barGap: 2,
+      barRadius: 2,
     });
     wavesurferRef.current = wavesurfer;
 
@@ -122,8 +114,6 @@ export default function WaveformPlayer({ beat }: WaveformPlayerProps) {
 
     wavesurfer.on("ready", handleReady);
     wavesurfer.on("play", () => {
-      // WaveSurfer has its own media element; never let it become the source of truth.
-      // All audible playback must go through the global player used by the footer.
       const time = wavesurfer.getCurrentTime();
       wavesurfer.pause();
       if (!isCurrent || !globalIsPlaying) startGlobalPlayback(time);
@@ -143,6 +133,7 @@ export default function WaveformPlayer({ beat }: WaveformPlayerProps) {
       wavesurferRef.current = null;
     };
   }, [
+    accent,
     audioUrl,
     beat.coverImage,
     beat.id,
@@ -152,12 +143,6 @@ export default function WaveformPlayer({ beat }: WaveformPlayerProps) {
     playTrack,
     seek,
   ]);
-
-  useEffect(() => {
-    return () => {
-      wavesurferRef.current?.destroy();
-    };
-  }, []);
 
   useEffect(() => {
     if (!isCurrent) return;
@@ -197,71 +182,62 @@ export default function WaveformPlayer({ beat }: WaveformPlayerProps) {
   };
 
   return (
-    <div className="rounded-[30px] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] shadow-[0_30px_100px_rgba(0,0,0,0.38)] overflow-hidden">
-      <div className="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
-        <div className="flex flex-col gap-5 sm:gap-6">
-          <div className="flex flex-col gap-5 sm:grid sm:grid-cols-[88px_minmax(0,1fr)] sm:items-center sm:gap-6">
-            <Button
-              onClick={togglePlayback}
-              disabled={isResolving || !audioUrl}
-              aria-label={isPlaying ? "Pause beat preview" : "Play beat preview"}
-              className="mx-auto sm:mx-0 h-[78px] w-[78px] rounded-full border border-amber-300/30 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.3),rgba(255,255,255,0.06)),linear-gradient(135deg,#f4b860,#ef7d5f)] text-black shadow-[0_0_36px_rgba(244,184,96,0.22)] hover:scale-[1.03] hover:shadow-[0_0_42px_rgba(244,184,96,0.28)] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
-            >
-              {isPlaying ? (
-                <Pause className="h-8 w-8" />
-              ) : (
-                <Play className="h-8 w-8 ml-1" />
-              )}
-            </Button>
-
-            <div className="min-w-0">
-              <div
-                ref={wrapperRef}
-                className="group relative rounded-[28px] bg-black/28 px-1 py-2 transition-colors hover:bg-black/34"
-                onMouseMove={(e) => updateHoverPosition(e.clientX)}
-                onMouseLeave={() => setHoverRatio(null)}
-                onTouchMove={(e) => {
-                  if (e.touches[0]) updateHoverPosition(e.touches[0].clientX);
-                }}
-                onTouchEnd={() => setHoverRatio(null)}
-              >
-                {hoverRatio != null && (
-                  <div
-                    className="pointer-events-none absolute inset-y-2 z-20 w-px bg-white/40"
-                    style={{ left: `${hoverRatio * 100}%` }}
-                  />
-                )}
-                {hoverTime != null && (
-                  <div
-                    className="pointer-events-none absolute -top-8 z-20 -translate-x-1/2 rounded-full bg-white/10 px-2 py-1 text-[11px] text-zinc-200 backdrop-blur-sm"
-                    style={{ left: `${hoverRatio! * 100}%` }}
-                  >
-                    {formatTime(hoverTime)}
-                  </div>
-                )}
-                <div
-                  ref={waveformRef}
-                  className={`w-full cursor-pointer [&_canvas]:rounded-[18px] [&_wave]:transition-opacity ${
-                    isReady ? "opacity-100" : "opacity-70"
-                  }`}
-                />
-                {!isReady && (
-                  <div className="pointer-events-none absolute inset-0 rounded-[24px] bg-[linear-gradient(90deg,rgba(255,255,255,0.03),rgba(255,255,255,0.08),rgba(255,255,255,0.03))] animate-pulse" />
-                )}
-              </div>
-
-              <div className="mt-3 flex items-center justify-between text-sm">
-                <div className="text-zinc-100 font-medium">
-                  {formatTime(currentTime)}
-                </div>
-                <div className="text-zinc-500">
-                  {isResolving ? "Loading preview..." : "Preview"}
-                </div>
-                <div className="text-zinc-400">{formatTime(duration)}</div>
-              </div>
-            </div>
+    <div className="pt-2">
+      <div
+        ref={wrapperRef}
+        className="relative overflow-x-clip"
+        onMouseMove={(e) => updateHoverPosition(e.clientX)}
+        onMouseLeave={() => setHoverRatio(null)}
+        onTouchMove={(e) => {
+          if (e.touches[0]) updateHoverPosition(e.touches[0].clientX);
+        }}
+        onTouchEnd={() => setHoverRatio(null)}
+      >
+        {hoverTime != null && (
+          <div
+            className="pointer-events-none absolute -top-6 z-20 -translate-x-1/2 text-[11px] tabular-nums text-[#6F6F69]"
+            style={{ left: `${hoverRatio! * 100}%` }}
+          >
+            {formatTime(hoverTime)}
           </div>
+        )}
+        <div
+          ref={waveformRef}
+          className={`w-full cursor-pointer ${isReady ? "opacity-100" : "opacity-60"}`}
+        />
+        {!isReady && (
+          <div className="pointer-events-none absolute inset-0 rounded-xl bg-black/[0.03] animate-pulse" />
+        )}
+      </div>
+      <div className="mt-4 hidden items-center justify-between lg:flex">
+        <span className="text-[12px] tabular-nums text-[#999991]">{formatTime(currentTime)}</span>
+        <button
+          type="button"
+          onClick={togglePlayback}
+          disabled={isResolving || !audioUrl}
+          aria-label={isPlaying ? "Pause beat preview" : "Play beat preview"}
+          className="inline-flex items-center gap-2 text-sm disabled:opacity-50"
+        >
+          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          {isPlaying ? "Pause" : "Play"}
+        </button>
+        <span className="text-[12px] tabular-nums text-[#999991]">{formatTime(duration)}</span>
+      </div>
+      <div className="mt-4 lg:hidden">
+        <div className="flex items-center justify-between">
+          <span className="text-[13px] tabular-nums text-[#999991]">{formatTime(currentTime)}</span>
+          <span className="text-[13px] tabular-nums text-[#999991]">{formatTime(duration)}</span>
         </div>
+        <button
+          type="button"
+          onClick={togglePlayback}
+          disabled={isResolving || !audioUrl}
+          aria-label={isPlaying ? "Pause beat preview" : "Play beat preview"}
+          className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground text-sm text-background disabled:opacity-50"
+        >
+          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
+          {isPlaying ? "Pause" : "Play"}
+        </button>
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ const Terms: React.FC = () => {
         time to time; continued use means acceptance of changes.
       </p>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">Use of Service</h3>
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">Use of Service</h3>
       <ul className="list-disc pl-6 space-y-1">
         <li>
           You must be at least 13 years old or the age of digital consent in
@@ -27,7 +27,7 @@ const Terms: React.FC = () => {
         </li>
       </ul>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">
         Purchases & Refunds
       </h3>
       <ul className="list-disc pl-6 space-y-1">
@@ -41,7 +41,7 @@ const Terms: React.FC = () => {
         <li>We may cancel an order and refund if fraud is suspected.</li>
       </ul>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">
         Intellectual Property
       </h3>
       <p>
@@ -49,7 +49,7 @@ const Terms: React.FC = () => {
         is governed by the applicable license selected at checkout.
       </p>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">
         Limitation of Liability
       </h3>
       <p>
@@ -58,7 +58,7 @@ const Terms: React.FC = () => {
         profits arising from your use of the service.
       </p>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">Governing Law</h3>
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">Governing Law</h3>
       <p>
         These Terms are governed by the laws of your principal place of business
         or residence, without regard to conflict-of-laws provisions.

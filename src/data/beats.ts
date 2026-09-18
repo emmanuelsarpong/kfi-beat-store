@@ -18,7 +18,7 @@ export interface BeatData {
    */
   audioUrl?: string;
   coverImage?: string;
-  // Optional: force a specific gradient variant (1..N). If omitted, color is derived from id.
+  // Optional preferred color palette (1..22). Pattern is assigned uniquely per beat.
   coverVariant?: number;
   paymentLink?: string;
   /**
@@ -49,7 +49,7 @@ export const beats: BeatData[] = [
   {
     id: "42",
     title: "Breeze",
-    genre: "Afrobeats / Soca",
+    genre: "Afro-Soca",
     bpm: 101,
     mood: "Tropical",
     key: "D# min",

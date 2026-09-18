@@ -12,7 +12,7 @@ const Privacy: React.FC = () => {
         respect your rights under applicable data protection laws.
       </p>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">
         Information We Collect
       </h3>
       <ul className="list-disc pl-6 space-y-1">
@@ -21,7 +21,7 @@ const Privacy: React.FC = () => {
         <li>Usage data (pages viewed, actions, device info) for analytics.</li>
       </ul>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">
         How We Use Information
       </h3>
       <ul className="list-disc pl-6 space-y-1">
@@ -31,28 +31,28 @@ const Privacy: React.FC = () => {
         <li>Comply with legal obligations and respond to lawful requests.</li>
       </ul>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">Cookies & Tracking</h3>
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">Cookies & Tracking</h3>
       <p>
         We use essential cookies for core functionality and analytics to
         understand aggregate usage. You can control cookies via your browser
         settings. We do not sell your personal data.
       </p>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">Data Sharing</h3>
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">Data Sharing</h3>
       <p>
         We share data only with trusted service providers (e.g., payment
         processors, hosting, analytics) under strict contractual safeguards. We
         do not share personal data with third parties for their own marketing.
       </p>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">Your Rights</h3>
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">Your Rights</h3>
       <ul className="list-disc pl-6 space-y-1">
         <li>Access, correct, or delete your personal information.</li>
         <li>Object to processing or request restriction where applicable.</li>
         <li>Data portability where technically feasible.</li>
       </ul>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">
         Retention & Security
       </h3>
       <p>
@@ -60,7 +60,7 @@ const Privacy: React.FC = () => {
         implement technical and organizational measures to protect it.
       </p>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">Contact</h3>
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">Contact</h3>
       <p>
         Questions or requests? Email{" "}
         <a href="mailto:privacy@kfi.io" className="underline">

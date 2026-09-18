@@ -16,6 +16,7 @@ const Store = lazy(() => import("./pages/store"));
 const BeatDetail = lazy(() => import("./pages/BeatDetail"));
 const Download = lazy(() => import("./pages/Download"));
 const Favorites = lazy(() => import("./pages/Favorites"));
+const About = lazy(() => import("./pages/About"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
@@ -29,6 +30,26 @@ import CartDrawer from "@/components/CartDrawer";
 import ScrollToHash from "@/components/ScrollToHash";
 
 const queryClient = new QueryClient();
+
+const PAGE_TITLES: Record<string, string> = {
+  "/": "Beats",
+  "/store": "Catalog",
+  "/about": "About",
+  "/favorites": "Favorites",
+  "/licensing": "Licensing",
+  "/privacy": "Privacy",
+  "/terms": "Terms",
+  "/download": "Download",
+};
+
+const DocumentTitle: React.FC = () => {
+  const { pathname } = useLocation();
+  React.useEffect(() => {
+    if (pathname.startsWith("/beats/")) return;
+    document.title = PAGE_TITLES[pathname] ?? "Not found";
+  }, [pathname]);
+  return null;
+};
 
 const RouteFade: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -102,6 +123,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <Router>
+              <DocumentTitle />
               <CartDrawer />
               <Suspense
                 fallback={<LoadingSpinner size="lg" className="min-h-screen" />}
@@ -112,18 +134,18 @@ const App = () => (
                     <Route path="/store" element={<Store />} />
                     <Route path="/beats/:slug" element={<BeatDetail />} />
                     <Route path="/favorites" element={<Favorites />} />
+                    <Route path="/about" element={<About />} />
                     <Route path="/download" element={<Download />} />
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/licensing" element={<Licensing />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </RouteFade>
               </Suspense>
+              <MiniPlayer />
               <ScrollToHash />
               <RevealManager />
-              {/* Mobile bottom nav removed for responsive website design */}
             </Router>
             <CookieBanner />
           </CartProvider>

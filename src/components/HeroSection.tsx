@@ -1,93 +1,132 @@
-import React from "react";
-import clsx from "clsx";
-import { Button } from "@/components/ui/button";
-import studioVideo from "@/assets/studio.mp4";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  size?: "sm" | "md" | "lg";
-  variant?: "primary" | "cart" | "secondary";
-};
-
-export const CustomButton: React.FC<ButtonProps> = ({
-  size = "md",
-  variant = "primary",
-  className,
-  children,
-  ...props
-}) => {
-  const base =
-    "inline-flex items-center justify-center font-semibold rounded-lg transition focus:outline-none focus:ring-2 focus:ring-offset-2";
-  const sizes = {
-    sm: "px-4 py-2 text-sm",
-    md: "px-6 py-3 text-base",
-    lg: "px-8 py-3 text-lg",
-  };
-  const variants = {
-    primary:
-      "bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow hover:from-purple-600 hover:to-blue-600",
-    cart: "bg-black text-white shadow hover:bg-zinc-900",
-    secondary: "bg-zinc-200 text-black shadow hover:bg-zinc-300",
-  };
-
-  return (
-    <button
-      className={clsx(base, sizes[size], variants[variant], className)}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-};
+import { Pause, Play } from "lucide-react";
+import BeatArtwork from "@/components/BeatArtwork";
+import { useBeats } from "@/hooks/useBeats";
+import { usePlayer } from "@/hooks/usePlayer";
+import { beats as seedBeats } from "@/data/beats";
+import { startBeatPlayback } from "@/lib/playBeat";
+import { formatGenre, formatKey } from "@/lib/catalog";
+import { getAccentColor } from "@/lib/artwork";
+import { getBeatHref } from "@/lib/beatSlugs";
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const { beats } = useBeats();
+  const { current, isPlaying, playTrack, toggle } = usePlayer();
+  const latest = useMemo(() => {
+    return [...(beats ?? seedBeats)].sort((a, b) => Number(b.id) - Number(a.id))[0];
+  }, [beats]);
 
-  const goToStore = () => {
-    navigate("/store");
+  const playingLatest = current?.id === latest?.id && isPlaying;
+  const accent = latest ? getAccentColor(latest) : "#111111";
+
+  const playLatest = () => {
+    if (!latest) return;
+    if (current?.id === latest.id) {
+      toggle();
+      return;
+    }
+    startBeatPlayback(latest, playTrack).catch((error) => {
+      console.error("[player] failed to play latest", error);
+    });
   };
 
   return (
-    <section className="relative min-h-[66vh] flex items-center justify-center py-16 md:py-24 bg-black overflow-hidden w-full">
-      <video
-        src={studioVideo}
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="auto"
-        className="absolute inset-0 w-full h-full object-cover opacity-70"
-      />
-      {/* Faint #0B0F1A overlay to match contact form */}
-      <div className="absolute inset-0 w-full h-full bg-[#0B0F1A] opacity-40 pointer-events-none z-10" />
-      {/* Gradient overlay at bottom */}
-      <div className="pointer-events-none absolute bottom-0 w-full h-24 bg-gradient-to-b from-transparent to-black z-20" />
-      <div className="relative z-30 flex flex-col items-center w-full max-w-7xl mx-auto px-6 md:px-8">
-        <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-4 text-center px-2 md:px-4">
-          Premium Beats. No Exceptions.
-        </h1>
-        <div className="flex-1" />
-        {/* CTA with subtle aura and synced waves behind */}
-        <div className="relative mt-10 group">
-          {/* Glow aura (warm) behind button */}
-          <div className="pointer-events-none absolute -inset-4 md:-inset-5 rounded-2xl bg-gradient-to-r from-rose-500/25 via-orange-500/25 to-amber-400/25 blur-xl opacity-30 group-hover:opacity-40 transition-opacity animate-cta-pulse" />
-          {/* Waves behind button as atmospheric motion */}
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-10 opacity-25 animate-cta-pulse">
-            <div className="kfi-cta-waves scale-90 md:scale-100">
-              <div className="flex items-end justify-center gap-1.5">
-                {Array.from({ length: 16 }).map((_, i) => (
-                  <span key={i} className="kfi-eq-bar" />
-                ))}
-              </div>
+    <section className="relative overflow-hidden">
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 pt-8 pb-10 lg:pt-16 lg:pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 items-end">
+          <div className="lg:col-span-7">
+            <p className="kfi-kicker reveal">KFI / PRODUCER</p>
+            <h1 className="mt-5 lg:mt-6 font-display text-[48px] sm:text-[56px] md:text-[64px] lg:text-[84px] leading-[0.94] lg:leading-[0.92] tracking-[-0.05em] reveal">
+              Sound with
+              <br />
+              a point of view.
+            </h1>
+            <p className="mt-6 lg:mt-8 max-w-md text-[16px] leading-7 text-[#6F6F69] reveal">
+              Premium production for artists building records worth replaying.
+            </p>
+            <div className="mt-8 lg:mt-10 flex flex-wrap items-center gap-6 reveal">
+              <button
+                type="button"
+                onClick={() => navigate("/store")}
+                className="inline-flex min-h-11 items-center gap-2 text-sm font-medium"
+              >
+                Explore beats
+                <span aria-hidden>→</span>
+              </button>
+              <button
+                type="button"
+                onClick={playLatest}
+                className="inline-flex min-h-11 items-center gap-2 text-sm text-[#6F6F69] hover:text-foreground"
+              >
+                <span className="inline-flex h-10 w-10 lg:h-8 lg:w-8 items-center justify-center rounded-full border border-black/[0.08]">
+                  {playingLatest ? (
+                    <Pause className="h-3.5 w-3.5" />
+                  ) : (
+                    <Play className="h-3.5 w-3.5 ml-px" />
+                  )}
+                </span>
+                {playingLatest ? "Pause latest" : "Play latest"}
+              </button>
             </div>
           </div>
-          <Button
-            size="lg"
-            className="relative z-20 px-9 py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-black via-zinc-900 to-zinc-800 hover:from-zinc-900 hover:via-zinc-800 hover:to-zinc-700 shadow-lg hover:shadow-amber-500/25 hover:scale-105 btn-ripple ring-1 ring-white/10 focus-visible:ring-2 focus-visible:ring-amber-400/50"
-            onClick={goToStore}
-          >
-            Explore Beats
-          </Button>
+
+          {latest ? (
+            <div className="lg:col-span-5 lg:pl-6 reveal">
+              <div
+                className="relative rounded-[20px] p-3 sm:p-4 lg:p-5"
+                style={{ background: `${accent}14` }}
+              >
+                <div className="flex flex-col lg:flex-row lg:items-end gap-4">
+                  <div className="relative w-full lg:w-[46%] lg:max-w-[220px] shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => navigate(getBeatHref(latest))}
+                      className="w-full"
+                    >
+                      <BeatArtwork
+                        beat={latest}
+                        playing={playingLatest}
+                        priority
+                        className="aspect-square w-full rounded-[14px]"
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={playLatest}
+                      className="absolute left-1/2 top-1/2 z-10 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-foreground shadow-soft backdrop-blur-sm lg:hidden"
+                      aria-label={playingLatest ? "Pause latest" : "Play latest"}
+                    >
+                      {playingLatest ? (
+                        <Pause className="h-5 w-5" />
+                      ) : (
+                        <Play className="h-5 w-5 ml-0.5" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="min-w-0 pb-1">
+                    <p className="kfi-kicker">Current release</p>
+                    <h2 className="mt-3 font-display text-3xl tracking-display">
+                      {latest.title}
+                    </h2>
+                    <p className="mt-2 text-sm text-[#6F6F69]">
+                      {formatGenre(latest.genre)}
+                    </p>
+                    <p className="mt-3 text-[13px] lg:text-[12px] tabular-nums text-[#999991]">
+                      {latest.bpm} BPM
+                      {latest.key ? ` · ${formatKey(latest.key)}` : ""}
+                    </p>
+                    <div className="mt-5 hero-eq text-foreground/70 hidden lg:flex" style={{ color: accent }}>
+                      {Array.from({ length: 12 }).map((_, i) => (
+                        <span key={i} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </section>

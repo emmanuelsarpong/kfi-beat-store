@@ -1,16 +1,49 @@
-import { Heart, Instagram, ShoppingBag } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Heart, Menu, Search, ShoppingBag, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
-import kfiLogo from "@/assets/logo.png";
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useFavorites } from "@/hooks/useFavorites";
+import { cn } from "@/lib/utils";
 
 const Header = () => {
   const [open, setOpen] = useState(false);
+  const [compact, setCompact] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { items, openDrawer } = useCart();
+  const { favorites } = useFavorites();
   const cartCount = items.length;
+  const favCount = favorites.length;
+
+  useEffect(() => {
+    const onScroll = () => setCompact(window.scrollY > 16);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    setOpen(false);
+    setSearchOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (searchOpen) searchRef.current?.focus();
+  }, [searchOpen]);
+
+  useEffect(() => {
+    if (!open) return;
+    const { body } = document;
+    const previous = body.style.overflow;
+    body.style.overflow = "hidden";
+    return () => {
+      body.style.overflow = previous;
+    };
+  }, [open]);
 
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -21,181 +54,212 @@ const Header = () => {
     }
   };
 
-  const handleContactClick = (e?: React.MouseEvent) => {
+  const goContact = (e?: React.MouseEvent) => {
     e?.preventDefault?.();
+    setOpen(false);
     if (location.pathname === "/") {
-      // Already on home, just scroll
-      const section = document.getElementById("contact");
-      if (section) {
-        section.scrollIntoView({ behavior: "smooth" });
-      }
-    } else {
-      // Navigate home, then scroll after navigation
-      navigate("/", { replace: false });
-      setTimeout(() => {
-        const section = document.getElementById("contact");
-        if (section) {
-          section.scrollIntoView({ behavior: "smooth" });
-        }
-      }, 100); // Delay to ensure DOM updates
+      document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+      return;
     }
+    navigate("/#contact");
   };
 
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = query.trim();
+    navigate(value ? `/store?q=${encodeURIComponent(value)}` : "/store");
+    setSearchOpen(false);
+  };
+
+  const navLink = (to: string, label: string, active?: boolean) => (
+    <Link
+      to={to}
+      className={cn(
+        "text-[13px] tracking-body text-[#6F6F69] hover:text-foreground",
+        active && "text-foreground"
+      )}
+    >
+      {label}
+    </Link>
+  );
+
+  const menu =
+    open && typeof document !== "undefined"
+      ? createPortal(
+          <div className="fixed inset-0 layer-nav-overlay lg:hidden">
+            <div className="absolute inset-0 bg-[#F6F5F1]" />
+            <div className="relative layer-nav-panel flex h-full flex-col px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+              <div className="flex items-center justify-between">
+                <span className="font-display tracking-[0.22em] text-sm">KFI</span>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Close menu"
+                  className="h-11 w-11 inline-flex items-center justify-center"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <nav className="mt-16 flex flex-col gap-7">
+                <Link
+                  to="/store"
+                  onClick={() => setOpen(false)}
+                  className="font-display text-[40px] tracking-display"
+                >
+                  Beats
+                </Link>
+                <Link
+                  to="/favorites"
+                  onClick={() => setOpen(false)}
+                  className="font-display text-[40px] tracking-display"
+                >
+                  Favorites
+                </Link>
+                <Link
+                  to="/about"
+                  onClick={() => setOpen(false)}
+                  className="font-display text-[40px] tracking-display"
+                >
+                  About
+                </Link>
+                <a
+                  href="/#contact"
+                  onClick={goContact}
+                  className="font-display text-[40px] tracking-display"
+                >
+                  Contact
+                </a>
+              </nav>
+              <div className="mt-auto flex flex-col gap-4 pb-4 text-sm text-[#6F6F69]">
+                <a
+                  href="https://instagram.com/thisiskfi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setOpen(false)}
+                >
+                  Instagram
+                </a>
+                <button
+                  type="button"
+                  className="text-left"
+                  onClick={() => {
+                    setOpen(false);
+                    openDrawer();
+                  }}
+                >
+                  Cart{cartCount ? ` · ${cartCount}` : ""}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
   return (
-    <header className="border-b border-gray-800 bg-black/80 backdrop-blur-sm sticky top-0 layer-sticky">
-      <div className="container mx-auto px-4 py-2 max-w-7xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <a
-              href="/"
-              onClick={handleLogoClick}
-              className="flex items-center gap-2 cursor-pointer"
-            >
-              <img
-                src={kfiLogo}
-                alt="KFI Logo"
-                className="h-10 w-10 object-contain"
-                decoding="async"
-                loading="lazy"
-              />
-            </a>
-          </div>
-          <nav className="hidden md:flex items-center space-x-8">
-            <Link
-              to="/store"
-              className="text-gray-300 hover:text-white transition-colors font-medium"
-              onClick={() => setOpen(false)}
-            >
-              Store
-            </Link>
-            <Link
-              to="/favorites"
-              className="text-gray-300 hover:text-white transition-colors font-medium flex items-center gap-1"
-              onClick={() => setOpen(false)}
-            >
-              <Heart className="h-4 w-4" /> Favorites
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                openDrawer();
-              }}
-              className="text-gray-300 hover:text-white transition-colors font-medium inline-flex items-center gap-2"
-              aria-label={`Open cart${cartCount ? `, ${cartCount} items` : ""}`}
-            >
-              <span className="relative inline-flex">
-                <ShoppingBag className="h-4 w-4" />
-                {cartCount > 0 ? (
-                  <span className="absolute -top-2 -right-2 min-w-[16px] h-[16px] px-0.5 flex items-center justify-center rounded-full bg-amber-400/90 text-[9px] font-bold text-black leading-none tabular-nums">
-                    {cartCount > 9 ? "9+" : cartCount}
-                  </span>
-                ) : null}
-              </span>
-              Cart
-            </button>
+    <>
+      <header className="sticky top-0 layer-sticky border-b border-black/[0.06] bg-[#F6F5F1]/85 backdrop-blur-md pt-[env(safe-area-inset-top)]">
+        <div
+          className={cn(
+            "container mx-auto max-w-7xl px-4 sm:px-6 flex items-center justify-between gap-3 lg:gap-4 transition-[height] duration-300",
+            compact ? "h-14" : "h-14 lg:h-[68px]"
+          )}
+        >
+          <a
+            href="/"
+            onClick={handleLogoClick}
+            className="font-display text-[15px] tracking-[0.22em] text-foreground py-3"
+          >
+            KFI
+          </a>
+
+          <nav className="hidden lg:flex items-center gap-8">
+            {navLink(
+              "/store",
+              "Beats",
+              location.pathname.startsWith("/store") || location.pathname.startsWith("/beats")
+            )}
+            {navLink("/about", "About", location.pathname === "/about")}
             <a
               href="/#contact"
-              onClick={handleContactClick}
-              className="text-gray-300 hover:text-white transition-colors font-medium"
+              onClick={goContact}
+              className="text-[13px] text-[#6F6F69] hover:text-foreground"
             >
               Contact
             </a>
-            <a
-              href="https://instagram.com/thisiskfi"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Instagram"
-              className="text-gray-300 hover:text-white transition-colors inline-flex items-center justify-center h-5 w-5"
-            >
-              <Instagram className="h-4 w-4" />
-            </a>
           </nav>
-          <button
-            className={`md:hidden flex items-center justify-center p-2 ${
-              open ? "invisible" : ""
-            }`}
-            onClick={() => setOpen(true)}
-            aria-label="Open menu"
-          >
-            <Menu className="text-white" size={28} />
-          </button>
-        </div>
-      </div>
-      {open && (
-        <div className="fixed inset-0 layer-nav-overlay flex items-center justify-center min-h-screen md:hidden">
-          {/* Strong blurry overlay */}
-          <div
-            className="absolute inset-0 bg-black/85 backdrop-blur-[20px]"
-            onClick={() => setOpen(false)}
-            aria-hidden="true"
-          />
-          {/* Centered modal menu */}
-          <div className="relative layer-nav-panel flex flex-col items-center justify-center w-full h-full">
+
+          <div className="flex items-center lg:gap-2">
+            {searchOpen ? (
+              <form onSubmit={submitSearch} className="hidden lg:flex items-center">
+                <input
+                  ref={searchRef}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search beats"
+                  className="h-9 w-44 lg:w-56 bg-transparent border-b border-foreground/20 text-sm outline-none placeholder:text-[#999991]"
+                />
+              </form>
+            ) : null}
             <button
-              className="fixed top-4 right-4 layer-nav-panel text-white p-2 bg-transparent border-0 -mt-2"
-              onClick={() => setOpen(false)}
-              aria-label="Close menu"
+              type="button"
+              aria-label="Search beats"
+              onClick={() => setSearchOpen((value) => !value)}
+              className="inline-flex h-11 w-11 lg:h-9 lg:w-9 items-center justify-center text-[#6F6F69] hover:text-foreground"
             >
-              <X className="h-7 w-7" />
+              <Search className="h-4 w-4" strokeWidth={1.7} />
             </button>
-            {/* Menu links */}
-            <nav className="flex flex-col items-center space-y-8">
-              <Link
-                to="/store"
-                className="text-3xl font-bold text-white"
-                onClick={() => setOpen(false)}
-              >
-                Store
-              </Link>
-              <Link
-                to="/favorites"
-                className="text-3xl font-bold text-white"
-                onClick={() => setOpen(false)}
-              >
-                Favorites
-              </Link>
-              <button
-                type="button"
-                className="text-3xl font-bold text-white inline-flex items-center gap-3"
-                onClick={() => {
-                  setOpen(false);
-                  openDrawer();
-                }}
-              >
-                <ShoppingBag className="h-8 w-8" />
-                Cart
-                {cartCount > 0 ? (
-                  <span className="text-lg font-semibold text-amber-300">
-                    ({cartCount})
-                  </span>
-                ) : null}
-              </button>
-              <a
-                href="/#contact"
-                className="text-3xl font-bold text-white"
-                onClick={() => {
-                  setOpen(false);
-                  handleContactClick();
-                }}
-              >
-                Contact
-              </a>
-              <a
-                href="https://instagram.com/thisiskfi"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-3xl font-bold text-white inline-flex items-center gap-3"
-                onClick={() => setOpen(false)}
-              >
-                <Instagram className="h-7 w-7" />
-                Instagram
-              </a>
-            </nav>
+            <Link
+              to="/favorites"
+              aria-label="Saved beats"
+              className="relative hidden lg:inline-flex h-9 w-9 items-center justify-center text-[#6F6F69] hover:text-foreground"
+            >
+              <Heart className="h-4 w-4" strokeWidth={1.7} />
+              {favCount > 0 ? (
+                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-foreground" />
+              ) : null}
+            </Link>
+            <button
+              type="button"
+              onClick={() => openDrawer()}
+              aria-label={`Open cart${cartCount ? `, ${cartCount} items` : ""}`}
+              className="relative inline-flex h-11 w-11 lg:h-9 lg:w-9 items-center justify-center text-[#6F6F69] hover:text-foreground"
+            >
+              <ShoppingBag className="h-4 w-4" strokeWidth={1.7} />
+              {cartCount > 0 ? (
+                <span className="absolute top-1.5 right-1.5 lg:-top-0.5 lg:-right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-foreground text-[9px] leading-4 text-background tabular-nums">
+                  {cartCount > 9 ? "9+" : cartCount}
+                </span>
+              ) : null}
+            </button>
+            <button
+              type="button"
+              className="lg:hidden inline-flex h-11 w-11 items-center justify-center text-foreground"
+              onClick={() => setOpen(true)}
+              aria-label="Open menu"
+            >
+              <Menu className="h-5 w-5" strokeWidth={1.6} />
+            </button>
           </div>
         </div>
-      )}
-    </header>
+
+        {searchOpen ? (
+          <form
+            onSubmit={submitSearch}
+            className="lg:hidden border-t border-black/[0.06] px-4 py-2"
+          >
+            <input
+              ref={searchRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search beats"
+              className="h-11 w-full bg-transparent text-[16px] outline-none placeholder:text-[#999991]"
+            />
+          </form>
+        ) : null}
+      </header>
+      {menu}
+    </>
   );
 };
 

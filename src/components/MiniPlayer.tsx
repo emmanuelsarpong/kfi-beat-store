@@ -1,169 +1,239 @@
-import React from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { Heart, Pause, Play, SkipBack, SkipForward, Volume2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import BeatArtwork from "@/components/BeatArtwork";
+import { beats } from "@/data/beats";
+import { useFavorites } from "@/hooks/useFavorites";
 import { usePlayer } from "@/hooks/usePlayer";
-import {
-  Play,
-  Pause,
-  Volume2,
-  SkipBack,
-  SkipForward,
-  Shuffle,
-} from "lucide-react";
+import { formatTime } from "@/lib/catalog";
+import { getBeatHref } from "@/lib/beatSlugs";
+import { cn } from "@/lib/utils";
 
-const format = (s: number) => {
-  if (!isFinite(s)) return "0:00";
-  const m = Math.floor(s / 60);
-  const r = Math.floor(s % 60)
-    .toString()
-    .padStart(2, "0");
-  return `${m}:${r}`;
-};
-
-type MiniPlayerProps = {
-  mode?: "floating" | "footer";
-};
-
-const MiniPlayer: React.FC<MiniPlayerProps> = ({ mode = "floating" }) => {
+const MiniPlayer = () => {
   const {
     current,
     isPlaying,
     currentTime,
     duration,
     toggle,
-    playRandom,
     seek,
     volume,
     setVolume,
     next,
     previous,
   } = usePlayer();
+  const { isFavorite, toggle: toggleFav } = useFavorites();
+  const dockRef = useRef<HTMLDivElement>(null);
 
-  // Remove jump for previous/next, use previous for previous track
+  const beat = useMemo(
+    () => (current?.id ? beats.find((item) => item.id === current.id) : null),
+    [current?.id]
+  );
 
-  const containerClass =
-    mode === "floating"
-      ? "fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[94%] sm:w-[500px] bg-zinc-950/90 backdrop-blur-md border border-zinc-800 rounded-2xl shadow-2xl"
-      : "relative w-full max-w-[660px] mx-auto bg-zinc-950/90 backdrop-blur-md border border-zinc-800 rounded-xl shadow-md transition-all duration-300";
+  useEffect(() => {
+    if (!current) {
+      document.documentElement.style.setProperty("--player-h", "0px");
+      return;
+    }
+    const el = dockRef.current;
+    if (!el) return;
+    const update = () => {
+      document.documentElement.style.setProperty(
+        "--player-h",
+        `${el.offsetHeight + 16}px`
+      );
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+      document.documentElement.style.setProperty("--player-h", "0px");
+    };
+  }, [current]);
+
+  if (!current || !beat) return null;
+
+  const favActive = isFavorite(beat.id);
+
+  const renderFavorite = (mobile: boolean) => (
+    <button
+      type="button"
+      onClick={() =>
+        toggleFav({
+          id: beat.id,
+          title: beat.title,
+          coverImage: beat.coverImage,
+          genre: beat.genre,
+          bpm: beat.bpm,
+        })
+      }
+      className={cn(
+        "inline-flex items-center justify-center",
+        mobile ? "h-11 w-11" : "h-8 w-8",
+        favActive ? "text-foreground" : "text-[#999991] hover:text-foreground"
+      )}
+      aria-label={favActive ? "Remove from saved beats" : "Save beat"}
+    >
+      <Heart className={cn("h-4 w-4", favActive && "fill-current")} strokeWidth={1.7} />
+    </button>
+  );
 
   return (
-    <div className={containerClass}>
-      <div className="grid grid-cols-[34px_1fr] gap-3 px-3 py-1.5">
-        {/* Cover / Placeholder */}
-        <div className="w-8 h-8 rounded-md overflow-hidden col-span-1 row-span-3 bg-zinc-800/60 flex items-center justify-center">
-          {current?.coverImage ? (
-            <img
-              src={current.coverImage}
-              className="w-full h-full object-cover"
-              alt={current.title}
-              decoding="async"
-              loading="lazy"
-            />
-          ) : (
-            <div className="flex items-center gap-[2px]">
-              <span className="block w-[3px] h-3 rounded-sm bg-zinc-500/70 animate-waveform [animation-delay:0s]" />
-              <span className="block w-[3px] h-4 rounded-sm bg-zinc-500/70 animate-waveform [animation-delay:0.12s]" />
-              <span className="block w-[3px] h-5 rounded-sm bg-zinc-500/70 animate-waveform [animation-delay:0.24s]" />
-              <span className="block w-[3px] h-4 rounded-sm bg-zinc-500/70 animate-waveform [animation-delay:0.36s]" />
+    <div
+      ref={dockRef}
+      className="fixed inset-x-3 z-40 bottom-[max(0.75rem,env(safe-area-inset-bottom))] lg:inset-x-auto lg:left-1/2 lg:-translate-x-1/2 lg:bottom-3 lg:w-[min(760px,calc(100vw-2rem))]"
+    >
+      <div className="rounded-[18px] border border-black/[0.08] bg-white/86 backdrop-blur-xl shadow-dock px-3 py-2.5 lg:px-4 lg:py-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center lg:hidden">
+          <div className="flex min-w-0 items-center gap-2.5 pr-2">
+            <Link to={getBeatHref(beat)} className="shrink-0">
+              <BeatArtwork
+                beat={beat}
+                playing={isPlaying}
+                compact
+                className="h-12 w-12 rounded-[10px]"
+              />
+            </Link>
+            <div className="min-w-0">
+              <Link
+                to={getBeatHref(beat)}
+                className="block truncate text-sm font-medium tracking-display"
+              >
+                {beat.title}
+              </Link>
+              <p className="truncate text-[11px] uppercase tracking-[0.16em] text-[#999991]">KFI</p>
             </div>
-          )}
-        </div>
-
-        {/* Line 1: title */}
-        <div className="col-span-1 min-w-0">
-          <div className="truncate text-[11px] md:text-sm font-semibold text-white flex items-center gap-1.5">
-            {current?.title || "Idle • Select a beat"}
-            {isPlaying && (
-              <span className="kfi-mini-wave" aria-hidden>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-              </span>
-            )}
-            {!current && (
-              <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-md bg-zinc-800/70 border border-white/5 tracking-wide font-normal text-zinc-400">
-                READY
-              </span>
-            )}
           </div>
+
+          <div className="flex items-center">
+            <button
+              type="button"
+              onClick={() => previous()}
+              className="inline-flex h-11 w-11 items-center justify-center text-[#6F6F69]"
+              aria-label="Previous"
+            >
+              <SkipBack className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => toggle()}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-foreground text-background"
+              aria-label={isPlaying ? "Pause" : "Play"}
+            >
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => next()}
+              className="inline-flex h-11 w-11 items-center justify-center text-[#6F6F69]"
+              aria-label="Next"
+            >
+              <SkipForward className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="flex justify-end">{renderFavorite(true)}</div>
         </div>
 
-        {/* Line 2: progress */}
-        <div className="col-span-1 flex items-center gap-2 text-[10px] md:text-[11px] text-zinc-400">
-          <span className="tabular-nums w-8 md:w-9 text-right">
-            {format(currentTime)}
-          </span>
+        <div className="mt-1.5 flex items-center gap-3 lg:hidden">
+          <span className="w-8 text-[11px] tabular-nums text-[#999991]">{formatTime(currentTime)}</span>
           <input
             type="range"
             min={0}
             max={duration || 0}
             value={Math.min(currentTime, duration || 0)}
             onChange={(e) => seek(Number(e.target.value))}
-            className="w-full accent-white/90 h-1"
+            className="player-range w-full"
             aria-label="Seek"
-            title="Seek"
           />
-          <span className="tabular-nums w-8 md:w-9 text-left">
-            {format(duration)}
+          <span className="w-8 text-right text-[11px] tabular-nums text-[#999991]">
+            {formatTime(duration)}
           </span>
         </div>
 
-        {/* Line 3: controls */}
-        <div className="col-span-1 flex items-center justify-between mt-0.5">
+        <div className="hidden lg:flex items-center gap-3">
+          <Link to={getBeatHref(beat)} className="shrink-0">
+            <BeatArtwork
+              beat={beat}
+              playing={isPlaying}
+              compact
+              className="h-14 w-14 rounded-[10px]"
+            />
+          </Link>
+
+          <div className="min-w-0 w-40">
+            <Link
+              to={getBeatHref(beat)}
+              className="block truncate text-sm font-medium tracking-display"
+            >
+              {beat.title}
+            </Link>
+            <p className="text-[11px] uppercase tracking-[0.16em] text-[#999991]">KFI</p>
+          </div>
+
           <div className="flex items-center gap-2">
             <button
-              onClick={() => playRandom()}
-              className="w-8 h-8 rounded-full bg-white/5 text-white flex items-center justify-center hover:bg-white/15 border border-white/10"
-              aria-label="Shuffle Play"
-              title="Shuffle Play"
-            >
-              <Shuffle className="w-3.5 h-3.5" />
-            </button>
-            <button
+              type="button"
               onClick={() => previous()}
-              className="w-8 h-8 rounded-full bg-white/5 text-white flex items-center justify-center hover:bg-white/15 border border-white/10"
-              aria-label="Previous Track"
-              title="Previous Track"
+              className="inline-flex h-8 w-8 items-center justify-center text-[#6F6F69] hover:text-foreground"
+              aria-label="Previous"
             >
-              <SkipBack className="w-3.5 h-3.5" />
+              <SkipBack className="h-4 w-4" />
             </button>
             <button
-              onClick={() => {
-                if (!current) playRandom();
-                else if (!isPlaying) toggle();
-                else toggle();
-              }}
-              className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform shadow-md"
+              type="button"
+              onClick={() => toggle()}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background"
               aria-label={isPlaying ? "Pause" : "Play"}
             >
-              {isPlaying ? (
-                <Pause className="w-4.5 h-4.5" />
-              ) : (
-                <Play className="w-4.5 h-4.5 ml-0.5" />
-              )}
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
             </button>
             <button
+              type="button"
               onClick={() => next()}
-              className="w-8 h-8 rounded-full bg-white/5 text-white flex items-center justify-center hover:bg-white/15 border border-white/10"
-              aria-label="Next Track"
-              title="Next Track"
+              className="inline-flex h-8 w-8 items-center justify-center text-[#6F6F69] hover:text-foreground"
+              aria-label="Next"
             >
-              <SkipForward className="w-3.5 h-3.5" />
+              <SkipForward className="h-4 w-4" />
             </button>
           </div>
-          <div className="flex items-center gap-2 text-zinc-300">
-            <Volume2 className="w-3.5 h-3.5" />
+
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <span className="w-8 text-right text-[11px] tabular-nums text-[#999991]">
+              {formatTime(currentTime)}
+            </span>
             <input
               type="range"
               min={0}
-              max={1}
-              step={0.01}
-              value={volume}
-              onChange={(e) => setVolume(Number(e.target.value))}
-              className="w-16 sm:w-24 accent-white/90 hover:brightness-110 h-1"
-              aria-label="Volume"
-              title="Volume"
+              max={duration || 0}
+              value={Math.min(currentTime, duration || 0)}
+              onChange={(e) => seek(Number(e.target.value))}
+              className="player-range w-full"
+              aria-label="Seek"
             />
+            <span className="w-8 text-[11px] tabular-nums text-[#999991]">
+              {formatTime(duration)}
+            </span>
+          </div>
+
+          <div className="flex items-center">
+            {renderFavorite(false)}
+            <div className="flex items-center gap-2 text-[#6F6F69]">
+              <Volume2 className="h-3.5 w-3.5" />
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={volume}
+                onChange={(e) => setVolume(Number(e.target.value))}
+                className="player-range w-16"
+                aria-label="Volume"
+              />
+            </div>
           </div>
         </div>
       </div>

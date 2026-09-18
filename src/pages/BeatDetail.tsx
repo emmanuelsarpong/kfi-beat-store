@@ -1,69 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
-import { Heart, ShoppingCart, ChevronLeft } from "lucide-react";
+import { Heart, ChevronLeft } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import BeatPurchaseModal from "@/components/BeatPurchaseModal";
+import BeatArtwork from "@/components/BeatArtwork";
+import LicensePicker, { shortLicenseLabel } from "@/components/LicensePicker";
+import RelatedBeats from "@/components/RelatedBeats";
 import WaveformPlayer from "@/components/WaveformPlayer";
 import { Button } from "@/components/ui/button";
-import { beats as staticBeats, type BeatData } from "@/data/beats";
+import { beats as staticBeats } from "@/data/beats";
 import { useBeats } from "@/hooks/useBeats";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useCart } from "@/hooks/useCart";
-import {
-  getBeatLicenseOptions,
-  getLicenseDisplayLabel,
-} from "@/lib/beatLicenses";
+import { getLicenseDisplayLabel } from "@/lib/beatLicenses";
 import { findBeatBySlug } from "@/lib/beatSlugs";
-import { MIN_LICENSE_PRICE_DISPLAY } from "@/config/licenses";
-
-function BeatArtwork({ beat }: { beat: BeatData }) {
-  const num = parseInt(beat.id, 10);
-  const paletteCount = 22;
-  const forced = Number(beat.coverVariant);
-  const idx =
-    Number.isFinite(forced) && forced > 0
-      ? (Math.floor(forced) - 1) % paletteCount
-      : isNaN(num)
-        ? Math.abs(Array.from(beat.id).reduce((a, c) => a + c.charCodeAt(0), 0)) %
-          paletteCount
-        : (num - 1) % paletteCount;
-  const gradClass = `grad-beat-${idx + 1}`;
-
-  return (
-    <div className="relative aspect-square overflow-hidden rounded-[28px] border border-white/10 bg-black/40 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
-      <div
-        role="img"
-        aria-label={`${beat.title} artwork`}
-        className={`grad-beat-base ${gradClass} h-full w-full scale-[1.02]`}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.06),rgba(0,0,0,0.34)_68%,rgba(0,0,0,0.75))]" />
-      <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
-        <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-300/80">
-          KFI Beat Store
-        </p>
-        <h1 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-white">
-          {beat.title}
-        </h1>
-      </div>
-    </div>
-  );
-}
-
-function MetaPill({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-zinc-200">
-      {children}
-    </span>
-  );
-}
+import { formatCatalogLabel, formatGenre, formatKey, formatPrice } from "@/lib/catalog";
+import { getAccentColor } from "@/lib/artwork";
+import { getBeatLicenseOptions } from "@/lib/beatLicenses";
+import type { LicenseType } from "@/config/licenses";
+import BeatPurchaseModal from "@/components/BeatPurchaseModal";
+import { toast } from "sonner";
 
 export default function BeatDetail() {
   const { slug } = useParams();
   const { beats } = useBeats();
   const { isFavorite, toggle } = useFavorites();
-  const { getItem, isInCart } = useCart();
+  const { getItem, isInCart, addItemWithLicense, openDrawer } = useCart();
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [selectedLicense, setSelectedLicense] = useState<LicenseType>("premium");
 
   const beat = useMemo(() => {
     return findBeatBySlug(beats ?? staticBeats, slug) ?? null;
@@ -71,13 +35,9 @@ export default function BeatDetail() {
 
   useEffect(() => {
     if (!beat) return;
-    const previousTitle = document.title;
-    document.title = `${beat.title} Beat | KFI Beat Store`;
-
+    document.title = beat.title;
     const descriptionContent = `${beat.title} is a ${beat.genre} beat at ${beat.bpm} BPM${beat.key ? ` in ${beat.key}` : ""}. Preview the beat, explore licenses, and buy instantly.`;
-    let meta = document.querySelector(
-      'meta[name="description"]'
-    ) as HTMLMetaElement | null;
+    let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
     let created = false;
     if (!meta) {
       meta = document.createElement("meta");
@@ -87,186 +47,172 @@ export default function BeatDetail() {
     }
     const previousDescription = meta.getAttribute("content");
     meta.setAttribute("content", descriptionContent);
-
     return () => {
-      document.title = previousTitle;
-      if (created) {
-        meta?.remove();
-      } else if (meta && previousDescription != null) {
-        meta.setAttribute("content", previousDescription);
-      }
+      if (created) meta?.remove();
+      else if (meta && previousDescription != null) meta.setAttribute("content", previousDescription);
     };
   }, [beat]);
 
-  if (!beat && beats) {
-    return <Navigate to="/store" replace />;
-  }
-
+  if (!beat && beats) return <Navigate to="/store" replace />;
   const currentBeat = beat ?? findBeatBySlug(staticBeats, slug);
-  if (!currentBeat) {
-    return <Navigate to="/store" replace />;
-  }
+  if (!currentBeat) return <Navigate to="/store" replace />;
 
-  const exclusiveText = currentBeat.sold
-    ? "Exclusive Sold"
-    : currentBeat.exclusive_available === false || currentBeat.id === "37"
-      ? "Exclusive unavailable"
-      : `Exclusive $${currentBeat.price.toFixed(0)}`;
-
-  const exclusivePanelText = currentBeat.sold
-    ? "Sold"
-    : currentBeat.exclusive_available === false || currentBeat.id === "37"
-      ? "Unavailable"
-      : `$${currentBeat.price.toFixed(0)}`;
   const cartItem = getItem(currentBeat.id);
-  const licenseOptions = getBeatLicenseOptions(currentBeat);
+  const options = getBeatLicenseOptions(currentBeat);
+  const selectedOption =
+    options.find((option) => option.type === selectedLicense && option.available) ??
+    options.find((option) => option.available);
+  const accent = getAccentColor(currentBeat);
+  const catalog = beats ?? staticBeats;
+
+  const handleContinue = () => {
+    if (!selectedOption?.available) return;
+    addItemWithLicense(currentBeat, selectedOption.type);
+    toast.success("Added to cart", {
+      description: `${currentBeat.title} · ${shortLicenseLabel(selectedOption.type)}`,
+    });
+    openDrawer();
+  };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Header />
-      <main className="relative flex-1">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-[radial-gradient(circle_at_top,rgba(148,163,255,0.12),transparent_48%),radial-gradient(circle_at_20%_18%,rgba(239,68,68,0.14),transparent_34%)]" />
-
-        <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 sm:pb-20">
+      <main className="flex-1">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 lg:pt-12 pb-16">
           <Link
             to="/store"
-            className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors"
+            className="inline-flex min-h-11 items-center gap-2 text-[13px] text-[#6F6F69] hover:text-foreground"
           >
             <ChevronLeft className="h-4 w-4" />
-            Back to store
+            <span className="lg:hidden">Back to beats</span>
+            <span className="hidden lg:inline">All beats</span>
           </Link>
 
-          <div className="mt-6 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-8 xl:gap-10 items-start">
-            <div className="space-y-6 sm:space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-[180px_minmax(0,1fr)] gap-5 sm:gap-7 items-center">
-                <BeatArtwork beat={currentBeat} />
-
-                <div className="min-w-0">
-                  <div className="space-y-3">
-                    <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">
-                      Single Track
-                    </p>
-                    <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight text-white">
-                      {currentBeat.title}
-                    </h1>
-                    <div className="flex flex-wrap gap-2.5">
-                      <MetaPill>{currentBeat.genre}</MetaPill>
-                      <MetaPill>{currentBeat.bpm} BPM</MetaPill>
-                      {currentBeat.mood && <MetaPill>{currentBeat.mood}</MetaPill>}
-                      {currentBeat.key && <MetaPill>{currentBeat.key}</MetaPill>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <WaveformPlayer beat={currentBeat} />
+          <div className="mt-6 lg:mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+            <div
+              className="lg:col-span-5 rounded-[18px] p-2 sm:p-3"
+              style={{ background: `${accent}12` }}
+            >
+              <BeatArtwork
+                beat={currentBeat}
+                className="aspect-square w-full rounded-[14px]"
+                priority
+              />
             </div>
 
-            <aside className="xl:sticky xl:top-24">
-              <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5 sm:p-6 shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">
-                      Pricing
-                    </p>
-                    <p className="mt-3 text-sm text-zinc-400">
-                      Licenses from ${MIN_LICENSE_PRICE_DISPLAY.toFixed(0)}
-                    </p>
-                    <p className="mt-1 text-2xl font-semibold tracking-tight text-white">
-                      {exclusiveText}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    aria-label={
-                      isFavorite(currentBeat.id)
-                        ? "Remove from favorites"
-                        : "Save beat"
-                    }
-                    onClick={() =>
-                      toggle({
-                        id: currentBeat.id,
-                        title: currentBeat.title,
-                        coverImage: currentBeat.coverImage,
-                        genre: currentBeat.genre,
-                        bpm: currentBeat.bpm,
-                      })
-                    }
-                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-zinc-100 hover:bg-white/[0.08] transition-colors"
-                  >
-                    <Heart
-                      className={`h-4 w-4 ${
-                        isFavorite(currentBeat.id) ? "fill-white" : ""
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                <div className="mt-6 rounded-2xl border border-white/8 bg-black/30 p-4 text-sm text-zinc-300 space-y-3">
-                  {licenseOptions.map((option, index) => (
-                    <div key={option.type}>
-                      {index === 3 && <div className="h-px bg-white/6 mb-3" />}
-                      <div className="flex items-center justify-between">
-                        <span>{option.label}</span>
-                        <span
-                          className={
-                            option.available ? "text-zinc-100" : "text-zinc-500"
-                          }
-                        >
-                          {option.available
-                            ? `$${option.price.toFixed(0)}`
-                            : option.type === "exclusive"
-                              ? exclusivePanelText
-                              : "Unavailable"}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                  {currentBeat.hasStems === false && (
-                    <p className="pt-1 text-xs text-zinc-500">
-                      Unlimited is unavailable until stems are available.
-                    </p>
-                  )}
-                </div>
-
-                {isInCart(currentBeat.id) && cartItem && (
-                  <p className="mt-4 text-xs text-amber-200/90 tracking-wide">
-                    In cart — {getLicenseDisplayLabel(cartItem.selectedLicense)}.
-                    Open the cart to change it or check out.
-                  </p>
-                )}
-                <div className="mt-6 flex flex-col gap-2.5">
-                  <Button
-                    onClick={() => setShowPurchaseModal(true)}
-                    disabled={currentBeat.sold === true}
-                    className="w-full h-12 rounded-2xl font-semibold text-white bg-[linear-gradient(135deg,#131313,#050505)] border border-white/15 hover:border-white/25 hover:-translate-y-[1px] transition-transform disabled:opacity-60 disabled:hover:translate-y-0"
-                  >
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    {currentBeat.sold ? "Exclusive Sold" : "Buy license"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={currentBeat.sold === true}
-                    onClick={() => setShowPurchaseModal(true)}
-                    className="w-full h-11 rounded-2xl font-medium border-white/12 bg-white/[0.03] text-zinc-100 hover:bg-white/[0.07] hover:text-white disabled:opacity-50"
-                  >
-                    Add to cart
-                  </Button>
-                </div>
+            <div className="lg:col-span-7">
+              <TrackHeader
+                beat={currentBeat}
+                isFavorite={isFavorite(currentBeat.id)}
+                onFavorite={() =>
+                  toggle({
+                    id: currentBeat.id,
+                    title: currentBeat.title,
+                    coverImage: currentBeat.coverImage,
+                    genre: currentBeat.genre,
+                    bpm: currentBeat.bpm,
+                  })
+                }
+              />
+              <div className="mt-7 lg:mt-8">
+                <WaveformPlayer beat={currentBeat} />
               </div>
-            </aside>
+              <div className="mt-8 lg:mt-10">
+                <LicensePicker
+                  beat={currentBeat}
+                  selected={selectedOption?.type ?? "premium"}
+                  onSelect={setSelectedLicense}
+                  accent={accent}
+                />
+                {isInCart(currentBeat.id) && cartItem ? (
+                  <p className="mt-4 text-[12px] text-[#6F6F69]">
+                    In cart — {getLicenseDisplayLabel(cartItem.selectedLicense)}.
+                  </p>
+                ) : null}
+                <Button
+                  onClick={handleContinue}
+                  disabled={currentBeat.sold === true || !selectedOption?.available}
+                  className="mt-6 w-full h-12"
+                >
+                  {currentBeat.sold
+                    ? "Sold"
+                    : `Continue with ${shortLicenseLabel(selectedOption?.type ?? "premium")} · ${formatPrice(selectedOption?.price ?? 0)}`}
+                </Button>
+                <button
+                  type="button"
+                  className="mt-3 inline-flex min-h-11 items-center text-[12px] text-[#999991] hover:text-foreground"
+                  onClick={() => setShowPurchaseModal(true)}
+                  disabled={currentBeat.sold === true}
+                >
+                  Buy now instead
+                </button>
+              </div>
+            </div>
           </div>
+
+          <div className="mt-12 lg:mt-16 max-w-xl">
+            <p className="kfi-kicker">About this beat</p>
+            <p className="mt-4 text-[15px] leading-7 text-[#6F6F69]">
+              {currentBeat.title} is a {formatGenre(currentBeat.genre)} record
+              {currentBeat.mood ? ` with a ${currentBeat.mood.toLowerCase()} feel` : ""}
+              {currentBeat.key ? `, written in ${formatKey(currentBeat.key)}` : ""}.
+              Listen first. License when it fits.
+            </p>
+          </div>
+
+          <RelatedBeats beat={currentBeat} catalog={catalog} />
         </section>
       </main>
-
       <BeatPurchaseModal
         beat={currentBeat}
         open={showPurchaseModal}
         onClose={() => setShowPurchaseModal(false)}
       />
       <Footer />
+    </div>
+  );
+}
+
+function TrackHeader({
+  beat,
+  isFavorite,
+  onFavorite,
+}: {
+  beat: {
+    id: string;
+    title: string;
+    genre: string;
+    bpm: number;
+    mood?: string;
+    key?: string;
+  };
+  isFavorite: boolean;
+  onFavorite: () => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <p className="kfi-kicker hidden lg:block">{formatCatalogLabel(beat.id)}</p>
+        <h1 className="mt-0 lg:mt-3 font-display text-[40px] leading-[1.02] tracking-display lg:text-5xl">
+          {beat.title}
+        </h1>
+        <p className="mt-3 text-sm text-[#6F6F69]">
+          {formatGenre(beat.genre)}
+          {beat.mood ? ` / ${beat.mood}` : ""}
+        </p>
+        <p className="mt-2 text-[13px] tabular-nums text-[#999991]">
+          {beat.bpm} BPM
+          {beat.key ? ` · ${formatKey(beat.key)}` : ""}
+        </p>
+      </div>
+      <button
+        type="button"
+        aria-label={isFavorite ? "Remove from saved beats" : "Save beat"}
+        onClick={onFavorite}
+        className="mt-1 inline-flex h-11 w-11 items-center justify-center text-[#999991] hover:text-foreground"
+      >
+        <Heart className={`h-5 w-5 ${isFavorite ? "fill-current text-foreground" : ""}`} strokeWidth={1.7} />
+      </button>
     </div>
   );
 }

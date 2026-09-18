@@ -1,5 +1,6 @@
-import { useState } from "react";
 import { Popover } from "@headlessui/react";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 const MIN_BPM = 1;
 const MAX_BPM = 300;
@@ -24,6 +25,8 @@ const BpmFilter = ({
   const [tab, setTab] = useState<"range" | "exact">("range");
   const [tempRange, setTempRange] = useState<[number, number]>(bpmRange);
   const [tempExact, setTempExact] = useState<number | "">(bpmExact);
+  const active =
+    bpmExact !== "" || bpmRange[0] !== MIN_BPM || bpmRange[1] !== MAX_BPM;
 
   const handleSave = () => {
     if (tab === "range") {
@@ -42,128 +45,83 @@ const BpmFilter = ({
     setBpmExact("");
   };
 
-  const handlePopoverOpen = () => {
-    setTempRange(bpmRange);
-    setTempExact(bpmExact);
-  };
-
   return (
-    <Popover className="relative z-[1000]">
+    <Popover className="relative z-[100]">
       <Popover.Button
-        className={`px-4 py-2 rounded bg-zinc-900 text-white border border-zinc-700 relative shadow-sm hover:bg-zinc-800 transition-colors ${
-          fullWidth ? "w-full" : ""
-        } ${className ?? ""}`}
-        onClick={handlePopoverOpen}
+        className={cn(
+          "px-3 py-1.5 rounded-full text-sm border border-transparent text-[#6F6F69] hover:text-foreground",
+          active && "text-foreground",
+          fullWidth && "w-full",
+          className
+        )}
+        onClick={() => {
+          setTempRange(bpmRange);
+          setTempExact(bpmExact);
+        }}
       >
-        BPM
+        BPM{active ? " ·" : " +"}
       </Popover.Button>
-      <Popover.Panel className="absolute z-[1000] mt-2 left-1/2 -translate-x-1/2 w-[min(18rem,92vw)] sm:w-72 bg-black/95 backdrop-blur-md border border-zinc-800 rounded-lg shadow-2xl p-4 ring-1 ring-white/5">
-        <div className="flex border-b border-zinc-700 mb-4">
+      <Popover.Panel className="absolute z-[100] mt-2 left-0 w-[min(18rem,92vw)] rounded-[16px] border border-black/[0.08] bg-white p-4 shadow-soft">
+        <div className="flex gap-4 mb-4 text-sm">
           <button
-            className={`flex-1 py-2 text-sm font-semibold ${
-              tab === "range"
-                ? "text-white border-b-2 border-white"
-                : "text-zinc-400"
-            }`}
+            className={tab === "range" ? "text-foreground" : "text-[#999991]"}
             onClick={() => setTab("range")}
           >
             Range
           </button>
           <button
-            className={`flex-1 py-2 text-sm font-semibold ${
-              tab === "exact"
-                ? "text-white border-b-2 border-white"
-                : "text-zinc-400"
-            }`}
+            className={tab === "exact" ? "text-foreground" : "text-[#999991]"}
             onClick={() => setTab("exact")}
           >
             Exact
           </button>
         </div>
         {tab === "range" ? (
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-zinc-400 text-xs">Min</span>
-              <span className="text-zinc-400 text-xs">Max</span>
-            </div>
-            <div className="flex items-center gap-2 mb-2">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
               <input
                 type="number"
                 min={MIN_BPM}
                 max={tempRange[1]}
                 value={tempRange[0]}
-                onChange={(e) =>
-                  setTempRange([Number(e.target.value), tempRange[1]])
-                }
-                className="w-16 px-2 py-1 rounded bg-zinc-800 text-white border border-zinc-700"
+                onChange={(e) => setTempRange([Number(e.target.value), tempRange[1]])}
+                className="w-20 h-9 px-2 rounded-[8px] border border-black/[0.08] bg-[#F6F5F1] text-sm tabular-nums"
                 aria-label="Minimum BPM"
               />
-              <span className="text-zinc-400">-</span>
+              <span className="text-[#999991]">–</span>
               <input
                 type="number"
                 min={tempRange[0]}
                 max={MAX_BPM}
                 value={tempRange[1]}
-                onChange={(e) =>
-                  setTempRange([tempRange[0], Number(e.target.value)])
-                }
-                className="w-16 px-2 py-1 rounded bg-zinc-800 text-white border border-zinc-700"
+                onChange={(e) => setTempRange([tempRange[0], Number(e.target.value)])}
+                className="w-20 h-9 px-2 rounded-[8px] border border-black/[0.08] bg-[#F6F5F1] text-sm tabular-nums"
                 aria-label="Maximum BPM"
               />
             </div>
-            <input
-              type="range"
-              min={MIN_BPM}
-              max={MAX_BPM}
-              value={tempRange[0]}
-              onChange={(e) =>
-                setTempRange([Number(e.target.value), tempRange[1]])
-              }
-              className="w-full accent-white mb-1"
-              aria-label="Minimum BPM slider"
-            />
-            <input
-              type="range"
-              min={MIN_BPM}
-              max={MAX_BPM}
-              value={tempRange[1]}
-              onChange={(e) =>
-                setTempRange([tempRange[0], Number(e.target.value)])
-              }
-              className="w-full accent-white"
-              aria-label="Maximum BPM slider"
-            />
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-            <input
-              type="number"
-              min={MIN_BPM}
-              max={MAX_BPM}
-              value={tempExact}
-              onChange={(e) =>
-                setTempExact(e.target.value ? Number(e.target.value) : "")
-              }
-              className="w-full px-2 py-1 rounded bg-zinc-800 text-white border border-zinc-700"
-              placeholder="Enter BPM"
-              aria-label="Exact BPM"
-            />
-          </div>
+          <input
+            type="number"
+            min={MIN_BPM}
+            max={MAX_BPM}
+            value={tempExact}
+            onChange={(e) => setTempExact(e.target.value ? Number(e.target.value) : "")}
+            className="w-full h-9 px-2 rounded-[8px] border border-black/[0.08] bg-[#F6F5F1] text-sm tabular-nums"
+            placeholder="Enter BPM"
+            aria-label="Exact BPM"
+          />
         )}
         <div className="flex justify-between items-center mt-4">
-          <button
-            className="text-xs text-zinc-400 hover:underline"
-            onClick={handleClear}
-            type="button"
-          >
+          <button className="text-xs text-[#999991]" onClick={handleClear} type="button">
             Clear
           </button>
           <Popover.Button
             as="button"
-            className="px-4 py-1 rounded bg-white text-black font-semibold text-sm"
+            className="text-sm"
             onClick={handleSave}
           >
-            Save
+            Apply
           </Popover.Button>
         </div>
       </Popover.Panel>

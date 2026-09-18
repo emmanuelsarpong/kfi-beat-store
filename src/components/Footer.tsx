@@ -1,114 +1,144 @@
-import React from "react";
-import { Instagram } from "lucide-react";
-import kfiLogo from "@/assets/logo.png";
-import MiniPlayer from "@/components/MiniPlayer";
+import { Link } from "react-router-dom";
 
-// 2026+ Modern Footer with integrated layout harmony & micro-interactions
 const Footer = () => {
   const year = new Date().getFullYear();
+
   return (
-    <footer className="relative mt-20 selection:bg-white/10">
-      {/* Top luminous gradient hairline */}
-      <div className="footer-glow-line after:absolute after:inset-0 after:bg-[radial-gradient(circle_at_30%_120%,rgba(255,255,255,0.06),transparent_60%)]" />
+    <footer className="mt-12 border-t border-black/[0.06] lg:mt-24">
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 py-8 lg:hidden">
+        <p className="font-display tracking-[0.22em] text-sm">KFI</p>
+        <p className="mt-5 max-w-[16rem] text-[15px] leading-6 text-[#6F6F69]">
+          Premium production for artists
+          <br />
+          building records worth replaying.
+        </p>
 
-      {/* Main footer shell */}
-      <div className="footer-glass text-zinc-400/90">
-        <div className="relative z-10 mx-auto px-4 md:px-6 max-w-7xl">
-          {/* Grid: 12 columns from md upward for precision placement */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-8 md:gap-6 py-8 md:py-10">
-            {/* Brand + tagline */}
-            <div className="md:col-span-3 flex flex-col gap-4 items-center md:items-start text-center md:text-left">
-              <div className="flex items-center">
-                <img
-                  src={kfiLogo}
-                  alt="KFI Logo"
-                  className="h-8 w-auto object-contain drop-shadow-[0_0_6px_rgba(255,255,255,0.12)]"
-                  decoding="async"
-                  loading="lazy"
-                />
-              </div>
-              <p className="text-xs leading-relaxed max-w-[240px] text-zinc-400/80">
-                Premium, future-forward sound beds crafted for artists &
-                creators seeking atmospheric impact and replay value.
-              </p>
-              <div className="flex items-center gap-3 text-[11px] font-medium tracking-wide">
-                <a
-                  href="https://instagram.com/thisiskfi"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="footer-link subtle inline-flex items-center gap-1.5"
-                >
-                  <Instagram className="h-3.5 w-3.5" />
-                  Instagram
-                </a>
-                <span className="text-zinc-600">/</span>
-                <a
-                  href="mailto:info.kfimusic@gmail.com"
-                  className="footer-link subtle"
-                >
-                  info.kfimusic@gmail.com
-                </a>
-              </div>
+        <div className="mt-8 grid grid-cols-2 gap-x-12 text-sm">
+          <div>
+            <p className="kfi-kicker">Beats</p>
+            <div className="mt-3 flex flex-col gap-2.5">
+              <a href="/#beats" className="text-[#6F6F69]">
+                Latest
+              </a>
+              <Link to="/store" className="text-[#6F6F69]">
+                Browse
+              </Link>
+              <Link to="/favorites" className="text-[#6F6F69]">
+                Favorites
+              </Link>
             </div>
-
-            {/* Navigation clusters */}
-            <div className="md:col-span-3 grid grid-cols-2 gap-6 text-sm place-content-start">
-              <div className="flex flex-col gap-3">
-                <span className="footer-label">Explore</span>
-                <a href="#beats" className="footer-link">
-                  🔥 Latest Beats
-                </a>
-                <a href="/store" className="footer-link">
-                  🎧 Browse Store
-                </a>
-                <a href="/#contact" className="footer-link">
-                  ✉️ Contact
-                </a>
-              </div>
-              <div className="flex flex-col gap-3">
-                <span className="footer-label">Legal</span>
-                <a href="/privacy" className="footer-link">
-                  Privacy
-                </a>
-                <a href="/terms" className="footer-link">
-                  Terms
-                </a>
-                <a href="/licensing" className="footer-link">
-                  Licensing
-                </a>
-              </div>
+          </div>
+          <div>
+            <p className="kfi-kicker">Info</p>
+            <div className="mt-3 flex flex-col gap-2.5">
+              <Link to="/about" className="text-[#6F6F69]">
+                About
+              </Link>
+              <a href="/#contact" className="text-[#6F6F69]">
+                Contact
+              </a>
+              <Link to="/licensing" className="text-[#6F6F69]">
+                Licensing
+              </Link>
             </div>
+          </div>
+        </div>
 
-            {/* Player Core */}
-            <div className="md:col-span-6 flex flex-col items-center md:items-end gap-4">
-              <div className="w-full md:max-w-xl relative group/footer-player">
-                <div className="pointer-events-none absolute -inset-3 rounded-2xl bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-amber-400/10 opacity-0 group-hover/footer-player:opacity-100 blur-xl transition-opacity" />
-                <MiniPlayer mode="footer" />
-                <div className="absolute -bottom-4 left-0 text-[10px] tracking-wide uppercase text-zinc-500 hidden md:block">
-                  Live Preview Engine
-                </div>
-              </div>
-              <div className="flex gap-4 md:gap-6 text-[11px] text-zinc-500/70">
-                <span className="hover:text-zinc-300 transition-colors">
-                  v1.0.0
-                </span>
-                <span className="hover:text-zinc-300 transition-colors">
-                  Status: Live
-                </span>
-              </div>
+        <div className="mt-8 grid grid-cols-2 gap-x-12 text-sm">
+          <a
+            href="https://instagram.com/thisiskfi"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#6F6F69]"
+          >
+            Instagram
+          </a>
+          <a href="mailto:info.kfimusic@gmail.com" className="text-[#6F6F69]">
+            Email
+          </a>
+        </div>
+
+        <div className="mt-10 text-[12px] leading-5 text-[#999991]">
+          <p>© {year} KFI</p>
+          <p className="mt-1">
+            <Link to="/privacy" className="hover:text-foreground">
+              Privacy
+            </Link>
+            {" · "}
+            <Link to="/terms" className="hover:text-foreground">
+              Terms
+            </Link>
+          </p>
+        </div>
+      </div>
+
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 hidden py-20 lg:block">
+        <div className="grid grid-cols-12 gap-8">
+          <div className="col-span-5 max-w-sm">
+            <p className="font-display tracking-[0.22em] text-sm">KFI</p>
+            <p className="mt-6 text-[15px] leading-7 text-[#6F6F69]">
+              Premium production for
+              <br />
+              artists building records
+              <br />
+              worth replaying.
+            </p>
+          </div>
+
+          <div className="col-span-3">
+            <p className="kfi-kicker">Beats</p>
+            <div className="mt-4 flex flex-col gap-3 text-sm">
+              <a href="/#beats" className="text-[#6F6F69] hover:text-foreground">
+                Latest
+              </a>
+              <Link to="/store" className="text-[#6F6F69] hover:text-foreground">
+                Browse
+              </Link>
+              <Link to="/favorites" className="text-[#6F6F69] hover:text-foreground">
+                Favorites
+              </Link>
             </div>
           </div>
 
-          {/* Lower meta bar */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-t border-white/5 py-4 text-[10px] md:text-[11px] text-zinc-600/80">
-            <div className="flex items-center gap-2">
-              <span className="font-medium tracking-wide text-zinc-400/90">
-                © {year} KFI Music
-              </span>
-              <span className="hidden sm:inline">•</span>
-              <span className="text-zinc-500">All rights reserved.</span>
+          <div className="col-span-4">
+            <p className="kfi-kicker">Info</p>
+            <div className="mt-4 flex flex-col gap-3 text-sm">
+              <Link to="/about" className="text-[#6F6F69] hover:text-foreground">
+                About
+              </Link>
+              <a href="/#contact" className="text-[#6F6F69] hover:text-foreground">
+                Contact
+              </a>
+              <Link to="/licensing" className="text-[#6F6F69] hover:text-foreground">
+                Licensing
+              </Link>
+              <a
+                href="https://instagram.com/thisiskfi"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#6F6F69] hover:text-foreground"
+              >
+                Instagram
+              </a>
+              <a
+                href="mailto:info.kfimusic@gmail.com"
+                className="text-[#6F6F69] hover:text-foreground"
+              >
+                Email
+              </a>
             </div>
-            {/* Removed Changelog / Roadmap / Support links per request */}
+          </div>
+        </div>
+
+        <div className="mt-16 flex items-center justify-between text-[12px] text-[#999991]">
+          <span>© {year} KFI</span>
+          <div className="flex gap-5">
+            <Link to="/privacy" className="hover:text-foreground">
+              Privacy
+            </Link>
+            <Link to="/terms" className="hover:text-foreground">
+              Terms
+            </Link>
           </div>
         </div>
       </div>

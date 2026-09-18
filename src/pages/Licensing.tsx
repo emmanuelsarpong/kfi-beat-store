@@ -9,36 +9,36 @@ const Licensing: React.FC = () => {
       <p>
         We offer several license options so you can choose the rights that fit
         your release. The on-site audio is a{" "}
-        <span className="font-semibold text-white">tagged MP3 preview only</span>{" "}
+        <span className="font-semibold text-foreground">tagged MP3 preview only</span>{" "}
         and is never delivered after purchase. All deliverables are clean
         masters and, for higher tiers, stems.
       </p>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">License Types</h3>
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">License Types</h3>
       <ul className="list-disc pl-6 space-y-2">
         <li>
-          <span className="font-medium text-white">Starter License ($49):</span>{" "}
+          <span className="font-medium text-foreground">Starter License ($49):</span>{" "}
           Perfect for demos and independent releases. Delivers the clean master
           WAV file with entry-level usage rights.
         </li>
         <li>
-          <span className="font-medium text-white">Premium License ($99):</span>{" "}
+          <span className="font-medium text-foreground">Premium License ($99):</span>{" "}
           Higher streaming and monetization limits while still delivering the
           same clean master WAV file.
         </li>
         <li>
-          <span className="font-medium text-white">Unlimited License ($199):</span>{" "}
+          <span className="font-medium text-foreground">Unlimited License ($199):</span>{" "}
           Includes the master WAV <span className="font-semibold">plus track stems</span>{" "}
           for full creative control, where stems are available for that beat.
         </li>
         <li>
-          <span className="font-medium text-white">Exclusive License:</span>{" "}
+          <span className="font-medium text-foreground">Exclusive License:</span>{" "}
           One-time full buyout. Delivers WAV and stems and marks the beat as
           exclusively sold so it can no longer be purchased by others.
         </li>
       </ul>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">Usage Rules</h3>
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">Usage Rules</h3>
       <ul className="list-disc pl-6 space-y-1">
         <li>
           Reselling or redistributing stems or beats “as-is” is prohibited.
@@ -49,7 +49,7 @@ const Licensing: React.FC = () => {
         <li>No use in hateful, illegal, or infringing content.</li>
       </ul>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">
         Stems, Masters & Deliverables
       </h3>
       <p>
@@ -64,18 +64,18 @@ const Licensing: React.FC = () => {
       </ul>
       <p className="mt-2">
         The preview MP3 you hear on the website is{" "}
-        <span className="font-semibold text-white">for listening only</span> and
+        <span className="font-semibold text-foreground">for listening only</span> and
         is not part of any deliverable.
       </p>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">Attribution</h3>
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">Attribution</h3>
       <p>
         Credit “KFI” is appreciated but not required. For label releases,
         contact us if you need a preferred credit line or publishing split
         details.
       </p>
 
-      <h3 className="mt-6 mb-2 text-white font-semibold">Support</h3>
+      <h3 className="mt-6 mb-2 text-foreground font-semibold">Support</h3>
       <p>
         Questions, holds, or bespoke terms?
         <a href="/#contact" className="underline ml-1">

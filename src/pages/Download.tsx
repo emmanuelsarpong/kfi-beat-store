@@ -1,6 +1,7 @@
 import React from "react";
 import { getApiServerUrl } from "@/lib/apiServerUrl";
 import { useCart } from "@/hooks/useCart";
+import PageLayout from "@/components/PageLayout";
 
 type DownloadFile = { name: string; url: string };
 
@@ -103,17 +104,19 @@ export default function Download() {
 
   if (loading)
     return (
-      <div className="min-h-[40vh] flex items-center justify-center text-zinc-300">
+      <div className="min-h-screen flex items-center justify-center text-[#6F6F69]">
         Loading your downloads…
       </div>
     );
-  if (error) return <div className="p-6 text-red-400">{error}</div>;
+  if (error) return <div className="p-6 text-destructive">{error}</div>;
 
   return (
-    <div className="max-w-3xl mx-auto p-6 text-white">
-      <h1 className="text-2xl font-bold mb-4">Your Downloads</h1>
-      <p className="text-zinc-400 mb-6">
-        Thanks for your purchase! Links expire in ~1 hour. Save them locally.
+    <PageLayout>
+    <div className="max-w-3xl mx-auto p-6 pt-12 pb-24">
+      <p className="kfi-kicker">Purchase</p>
+      <h1 className="mt-3 font-display text-4xl tracking-display mb-4">Your downloads</h1>
+      <p className="text-[#6F6F69] mb-6">
+        Thanks for your purchase. Links expire in about an hour — save them locally.
       </p>
 
       {grouped && grouped.length > 1 ? (
@@ -130,7 +133,7 @@ export default function Download() {
             if (!list.length) return null;
             return (
               <div key={`${it.beat}-${gi}`}>
-                <h2 className="text-lg font-semibold text-zinc-200 mb-3">
+                <h2 className="text-lg font-semibold mb-3">
                   {it.beatTitle || it.beat}
                   {it.licenseType ? (
                     <span className="text-zinc-500 font-normal text-sm ml-2">
@@ -142,11 +145,11 @@ export default function Download() {
                   {list.map((f, i) => (
                     <li
                       key={`${f.name}-${i}`}
-                      className="flex items-center justify-between bg-white/5 rounded-lg px-4 py-3"
+                      className="flex items-center justify-between bg-white rounded-[12px] border border-black/[0.06] px-4 py-3"
                     >
                       <span className="truncate mr-4">{f.name}</span>
                       <a
-                        className="text-amber-300 hover:underline shrink-0"
+                        className="underline shrink-0"
                         href={f.url}
                         target="_blank"
                         rel="noreferrer"
@@ -165,11 +168,11 @@ export default function Download() {
           {files.map((f, i) => (
             <li
               key={i}
-              className="flex items-center justify-between bg-white/5 rounded-lg px-4 py-3"
+              className="flex items-center justify-between bg-white rounded-[12px] border border-black/[0.06] px-4 py-3"
             >
               <span className="truncate mr-4">{f.name}</span>
               <a
-                className="text-amber-300 hover:underline"
+                className="underline"
                 href={f.url}
                 target="_blank"
                 rel="noreferrer"
@@ -181,16 +184,16 @@ export default function Download() {
         </ul>
       )}
 
-      <div className="mt-8 border-t border-white/10 pt-6">
+      <div className="mt-8 border-t border-black/[0.06] pt-6">
         <h2 className="font-semibold mb-2">Didn’t get the email?</h2>
-        <p className="text-sm text-zinc-400 mb-3">
+        <p className="text-sm text-[#6F6F69] mb-3">
           Enter your email and we’ll send these links to your inbox.
         </p>
         <div className="flex gap-2 max-w-xl">
           <input
             type="email"
             placeholder="you@example.com"
-            className="flex-1 bg-white/5 border border-white/10 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-amber-300"
+            className="flex-1 bg-white border border-black/[0.08] rounded-[10px] px-3 py-2 outline-none"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -222,13 +225,14 @@ export default function Download() {
                 setSending(false);
               }
             }}
-            className="bg-amber-300 text-black font-medium px-4 py-2 rounded-md disabled:opacity-50"
+            className="bg-foreground text-background font-medium px-4 py-2 rounded-[10px] disabled:opacity-50"
           >
             {sending ? "Sending…" : "Email me these links"}
           </button>
         </div>
-        {sentMsg && <p className="text-sm mt-2 text-zinc-300">{sentMsg}</p>}
+        {sentMsg && <p className="text-sm mt-2 text-[#6F6F69]">{sentMsg}</p>}
       </div>
     </div>
+    </PageLayout>
   );
 }

@@ -7,11 +7,10 @@ export interface LoadingSpinnerProps {
   className?: string;
 }
 
-// Pure CSS ring spinner using Tailwind utilities
 const sizeMap: Record<string, string> = {
   sm: "h-5 w-5 border-2",
-  md: "h-8 w-8 border-3",
-  lg: "h-12 w-12 border-4",
+  md: "h-8 w-8 border-2",
+  lg: "h-12 w-12 border-2",
 };
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
@@ -30,7 +29,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     >
       <div
         className={clsx(
-          "relative animate-spin rounded-full border-t-transparent border-white/60 border-solid",
+          "relative animate-spin rounded-full border-t-transparent border-foreground/25 border-solid",
           sizeMap[size] || sizeMap.md
         )}
       />

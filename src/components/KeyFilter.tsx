@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Popover } from "@headlessui/react";
+import { cn } from "@/lib/utils";
 
 type KeyFilterValue = {
-  note: string | null; // e.g., C, C#, Db
+  note: string | null;
   quality: "Maj" | "min" | null;
 };
 
@@ -11,89 +12,48 @@ type KeyFilterProps = {
   onChange: (val: KeyFilterValue) => void;
   fullWidth?: boolean;
   className?: string;
+  inline?: boolean;
 };
 
-const SHARP_NOTES = [
-  "C",
-  "C#",
-  "D",
-  "D#",
-  "E",
-  "F",
-  "F#",
-  "G",
-  "G#",
-  "A",
-  "A#",
-  "B",
-] as const;
-const FLAT_NOTES = [
-  "C",
-  "Db",
-  "D",
-  "Eb",
-  "E",
-  "F",
-  "Gb",
-  "G",
-  "Ab",
-  "A",
-  "Bb",
-  "B",
-] as const;
+const SHARP_NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"] as const;
+const FLAT_NOTES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"] as const;
 
 export default function KeyFilter({
   value,
   onChange,
   fullWidth,
   className,
+  inline = false,
 }: KeyFilterProps) {
   const [tab, setTab] = useState<"flat" | "sharp">("flat");
   const [temp, setTemp] = useState<KeyFilterValue>(value);
-
-  const openInit = () => setTemp(value);
-  const clear = () => {
-    setTemp({ note: null, quality: null });
-    onChange({ note: null, quality: null });
-  };
-  const save = () => onChange(temp);
+  const active = Boolean(value.note);
+  const label =
+    value.note && value.quality
+      ? `${value.note} ${value.quality}`
+      : value.note
+        ? value.note
+        : "Key +";
 
   const notes = tab === "sharp" ? SHARP_NOTES : FLAT_NOTES;
 
-  const label =
-    value.note && value.quality ? `${value.note} ${value.quality}` : "Key";
-
-  return (
-    <Popover className="relative z-[1000]">
-      <Popover.Button
-        className={`px-4 py-2 rounded bg-zinc-900 text-white border border-zinc-700 relative shadow-sm hover:bg-zinc-800 transition-colors ${
-          fullWidth ? "w-full" : ""
-        } ${className ?? ""}`}
-        onClick={openInit}
-      >
-        {label}
-      </Popover.Button>
-      <Popover.Panel className="absolute z-[1000] mt-2 left-1/2 -translate-x-1/2 w-[min(20rem,92vw)] sm:w-80 bg-black/95 backdrop-blur-md border border-zinc-800 rounded-lg shadow-2xl p-4 ring-1 ring-white/5">
-        <div className="flex border-b border-zinc-700 mb-4">
+  if (inline) {
+    return (
+      <div className={cn("w-full", className)}>
+        <div className="flex gap-4 mb-4 text-sm">
           <button
-            className={`flex-1 py-2 text-sm font-semibold ${
-              tab === "flat"
-                ? "text-white border-b-2 border-white"
-                : "text-zinc-400"
-            }`}
+            type="button"
+            className={tab === "flat" ? "text-foreground" : "text-[#999991]"}
             onClick={() => setTab("flat")}
           >
-            Flat keys
+            Flat
           </button>
           <button
-            className={`flex-1 py-2 text-sm font-semibold ${
-              tab === "sharp"
-                ? "text-white border-b-2 border-white"
-                : "text-zinc-400"
-            }`}
+            type="button"
+            className={tab === "sharp" ? "text-foreground" : "text-[#999991]"}
             onClick={() => setTab("sharp")}
           >
-            Sharp keys
+            Sharp
           </button>
         </div>
         <div className="grid grid-cols-6 gap-2 mb-3">
@@ -101,11 +61,79 @@ export default function KeyFilter({
             <button
               key={n}
               type="button"
-              className={`px-2 py-1 rounded border text-sm ${
-                temp.note === n
-                  ? "bg-white text-black border-white"
-                  : "bg-zinc-900 border-zinc-700 text-zinc-200"
-              }`}
+              className={cn(
+                "h-11 rounded-[8px] text-sm",
+                value.note === n ? "bg-foreground text-background" : "bg-white text-[#6F6F69]"
+              )}
+              onClick={() => onChange({ ...value, note: n })}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            className={cn(
+              "h-11 rounded-[8px] text-sm",
+              value.quality === "Maj" ? "bg-foreground text-background" : "bg-white text-[#6F6F69]"
+            )}
+            onClick={() => onChange({ ...value, quality: "Maj" })}
+          >
+            Major
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "h-11 rounded-[8px] text-sm",
+              value.quality === "min" ? "bg-foreground text-background" : "bg-white text-[#6F6F69]"
+            )}
+            onClick={() => onChange({ ...value, quality: "min" })}
+          >
+            Minor
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Popover className="relative z-[100]">
+      <Popover.Button
+        className={cn(
+          "px-3 py-1.5 rounded-full text-sm border border-transparent text-[#6F6F69] hover:text-foreground",
+          active && "text-foreground",
+          fullWidth && "w-full",
+          className
+        )}
+        onClick={() => setTemp(value)}
+      >
+        {label}
+      </Popover.Button>
+      <Popover.Panel className="absolute z-[100] mt-2 left-0 w-[min(20rem,92vw)] rounded-[16px] border border-black/[0.08] bg-white p-4 shadow-soft">
+        <div className="flex gap-4 mb-4 text-sm">
+          <button
+            className={tab === "flat" ? "text-foreground" : "text-[#999991]"}
+            onClick={() => setTab("flat")}
+          >
+            Flat
+          </button>
+          <button
+            className={tab === "sharp" ? "text-foreground" : "text-[#999991]"}
+            onClick={() => setTab("sharp")}
+          >
+            Sharp
+          </button>
+        </div>
+        <div className="grid grid-cols-6 gap-2 mb-3">
+          {notes.map((n) => (
+            <button
+              key={n}
+              type="button"
+              className={cn(
+                "h-8 rounded-[8px] text-sm",
+                temp.note === n ? "bg-foreground text-background" : "bg-[#F6F5F1] text-[#6F6F69]"
+              )}
               onClick={() => setTemp((t) => ({ ...t, note: n }))}
             >
               {n}
@@ -115,22 +143,20 @@ export default function KeyFilter({
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
-            className={`px-3 py-2 rounded border text-sm ${
-              temp.quality === "Maj"
-                ? "bg-white text-black border-white"
-                : "bg-zinc-900 border-zinc-700 text-zinc-200"
-            }`}
+            className={cn(
+              "h-9 rounded-[8px] text-sm",
+              temp.quality === "Maj" ? "bg-foreground text-background" : "bg-[#F6F5F1] text-[#6F6F69]"
+            )}
             onClick={() => setTemp((t) => ({ ...t, quality: "Maj" }))}
           >
             Major
           </button>
           <button
             type="button"
-            className={`px-3 py-2 rounded border text-sm ${
-              temp.quality === "min"
-                ? "bg-white text-black border-white"
-                : "bg-zinc-900 border-zinc-700 text-zinc-200"
-            }`}
+            className={cn(
+              "h-9 rounded-[8px] text-sm",
+              temp.quality === "min" ? "bg-foreground text-background" : "bg-[#F6F5F1] text-[#6F6F69]"
+            )}
             onClick={() => setTemp((t) => ({ ...t, quality: "min" }))}
           >
             Minor
@@ -138,23 +164,20 @@ export default function KeyFilter({
         </div>
         <div className="flex justify-between items-center mt-4">
           <button
-            className="text-xs text-zinc-400 hover:underline"
-            onClick={clear}
+            className="text-xs text-[#999991]"
+            onClick={() => {
+              setTemp({ note: null, quality: null });
+              onChange({ note: null, quality: null });
+            }}
             type="button"
           >
             Clear
           </button>
-          <Popover.Button
-            as="button"
-            className="px-4 py-1 rounded bg-white text-black font-semibold text-sm"
-            onClick={save}
-          >
-            Close
+          <Popover.Button as="button" className="text-sm" onClick={() => onChange(temp)}>
+            Apply
           </Popover.Button>
         </div>
       </Popover.Panel>
     </Popover>
   );
 }
-
-// Component-only export to keep fast refresh happy

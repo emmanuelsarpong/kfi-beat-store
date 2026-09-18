@@ -1153,8 +1153,10 @@ async function fulfillStripeCheckoutSession(session, full, email) {
     const item = lineItems[i];
     const price = item?.price;
     const product = price?.product;
-    const priceId = price?.id;
-    const productId = typeof product === "object" ? product?.id : undefined;
+    const priceId = row.stripe_price_id || price?.id;
+    const productId =
+      row.stripe_product_id ||
+      (typeof product === "object" ? product?.id : undefined);
     const productName = typeof product === "object" ? product?.name : undefined;
 
     const amountTotal =
@@ -1759,6 +1761,81 @@ async function validateCheckoutLine({ beatId, beatTitle, licenseType }) {
   };
 }
 
+function checkoutLicenseCopy(licenseType) {
+  switch (licenseType) {
+    case "starter":
+      return {
+        label: "Starter License",
+        description: "WAV · Demos and small releases · Non-exclusive",
+      };
+    case "premium":
+      return {
+        label: "Premium License",
+        description: "WAV · Commercial streaming · Non-exclusive",
+      };
+    case "unlimited":
+      return {
+        label: "Unlimited License",
+        description: "WAV + stems · Full mixing control · Non-exclusive",
+      };
+    case "exclusive":
+      return {
+        label: "Exclusive License",
+        description: "WAV + stems · Full ownership",
+      };
+    default:
+      return { label: "License", description: "" };
+  }
+}
+
+function resolveCheckoutBeatTitle(beatId, beatTitle) {
+  const requested = typeof beatTitle === "string" ? beatTitle.trim() : "";
+  if (requested) return requested;
+  return getStoreBeatTitle(beatId) || "Beat";
+}
+
+function catalogProductIdFromPrice(priceObject) {
+  const product = priceObject?.product;
+  if (typeof product === "string" && product) return product;
+  if (product && typeof product === "object" && product.id) return product.id;
+  return null;
+}
+
+function buildCheckoutLineItem(line) {
+  const price = line.priceObject;
+  const title = resolveCheckoutBeatTitle(line.beatId, line.beatTitle);
+  const copy = checkoutLicenseCopy(line.normalizedLicenseType);
+  const product_data = {
+    name: `${title} · ${copy.label}`,
+    metadata: {
+      beat_id: String(line.beatId),
+      license_type: String(line.normalizedLicenseType),
+    },
+  };
+  if (copy.description) product_data.description = copy.description;
+
+  const price_data = {
+    currency: price.currency,
+    product_data,
+  };
+  if (typeof price.unit_amount === "number") {
+    price_data.unit_amount = price.unit_amount;
+  } else if (price.unit_amount_decimal != null) {
+    price_data.unit_amount_decimal = price.unit_amount_decimal;
+  }
+  if (price.recurring) {
+    price_data.recurring = {
+      interval: price.recurring.interval,
+      interval_count: price.recurring.interval_count || 1,
+    };
+  }
+  if (price.tax_behavior && price.tax_behavior !== "unspecified") {
+    price_data.tax_behavior = price.tax_behavior;
+  }
+
+  return { price_data, quantity: 1 };
+}
+
 // Checkout
 app.post("/api/checkout/create", checkoutLimiter, async (req, res) => {
   try {
@@ -1853,13 +1930,12 @@ app.post("/api/checkout/create", checkoutLimiter, async (req, res) => {
     const cartPayload = lineModes.map((l) => ({
       beat_id: String(l.beatId),
       license_type: l.normalizedLicenseType,
-      beat_title: typeof l.beatTitle === "string" ? l.beatTitle : "",
+      beat_title: resolveCheckoutBeatTitle(l.beatId, l.beatTitle),
+      stripe_price_id: l.priceId,
+      stripe_product_id: catalogProductIdFromPrice(l.priceObject),
     }));
 
-    const line_items = lineModes.map((l) => ({
-      price: l.priceId,
-      quantity: 1,
-    }));
+    const line_items = lineModes.map((l) => buildCheckoutLineItem(l));
 
     const first = lineModes[0];
     const multi = lineModes.length > 1;
@@ -1882,7 +1958,7 @@ app.post("/api/checkout/create", checkoutLimiter, async (req, res) => {
         cart_count: String(lineModes.length),
         beat: String(first.beatId),
         beat_id: String(first.beatId),
-        beat_title: typeof first.beatTitle === "string" ? first.beatTitle : "",
+        beat_title: resolveCheckoutBeatTitle(first.beatId, first.beatTitle),
         license_type: first.normalizedLicenseType,
       },
       allow_promotion_codes: true,
