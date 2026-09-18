@@ -114,7 +114,7 @@ const ContactForm = () => {
             placeholder="Tell me about the record."
           />
         </div>
-        <Button type="submit" size="lg" disabled={status === "loading"} className="px-7">
+        <Button type="submit" size="lg" disabled={status === "loading"} className="w-full px-7 lg:w-auto">
           {status === "loading" ? "Sending…" : "Send message"}
         </Button>
         {status === "success" && (

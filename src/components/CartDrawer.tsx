@@ -121,7 +121,7 @@ export default function CartDrawer() {
             <p className="mt-3 text-sm text-[#6F6F69] max-w-xs lg:mx-auto">
               Add a beat when something catches your ear.
             </p>
-            <Button asChild className="mt-8">
+            <Button asChild className="mt-8 w-full lg:w-auto">
               <Link to="/store" onClick={() => setDrawerOpen(false)}>
                 Explore beats →
               </Link>
