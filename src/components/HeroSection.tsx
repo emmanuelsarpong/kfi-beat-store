@@ -37,7 +37,7 @@ const HeroSection = () => {
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 pt-8 pb-10 lg:pt-16 lg:pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 items-end">
           <div className="lg:col-span-7">
-            <p className="kfi-kicker reveal">KFI / PRODUCER</p>
+            <p className="kfi-kicker reveal">Producer</p>
             <h1 className="mt-5 lg:mt-6 font-display text-[48px] sm:text-[56px] md:text-[64px] lg:text-[84px] leading-[0.94] lg:leading-[0.92] tracking-[-0.05em] reveal">
               Sound with
               <br />
