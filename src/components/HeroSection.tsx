@@ -39,9 +39,9 @@ const HeroSection = () => {
           <div className="lg:col-span-7">
             <p className="kfi-kicker reveal">Producer</p>
             <h1 className="mt-5 lg:mt-6 font-display text-[48px] sm:text-[56px] md:text-[64px] lg:text-[84px] leading-[0.94] lg:leading-[0.92] tracking-[-0.05em] reveal">
-              Sound with
+              Find your sound.
               <br />
-              a point of view.
+              Make it yours.
             </h1>
             <p className="mt-6 lg:mt-8 max-w-md text-[16px] leading-7 text-[#6F6F69] reveal">
               Premium production for artists building records worth replaying.
